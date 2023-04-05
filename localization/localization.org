@@ -64,144 +64,13 @@ $$ C_2 = \sum_{i>j, \ i=1}^N \left[  < \phi_i | r | \phi_i > -  <
 or
 $$ C_3 = \sum_{i=1}^N \left[ < \phi_i | r | \phi_i > \right]^2.$$
 
-Where $\phi_i$ is an MO and $N$ the number of MOs,
-\begin{align*}
-< \phi_i | r^2 | \phi_i > &= < \phi_i | x^2 | \phi_i >  \\
-&+ < \phi_i | y^2 | \phi_i > \\
-&+ < \phi_i | z^2 | \phi_i >
-\end{align*}
-and
-\begin{align*}
-< \phi_i | r | \phi_i >^2 &= < \phi_i | x | \phi_i >^2  \\
-&+ < \phi_i | y | \phi_i >^2 \\
-&+ < \phi_i | z | \phi_i >^2
-\end{align*}
-
- 
-Starting with an initial set of MOs $\left\{\phi_i\right\}_{i=1}^N$, we
-are looking for a new set of MOs $\left\{\tilde{\phi}_i\right\}_{i=1}^N$ which
-minimizes the Foster-Boys criterion (or minimizes minus the criterion
-depending of the criterion between $C_{FB}$, $C_2$ and $C_3$. This new
-set of MOs can be found by applying a unitary transformation 
-$\textbf{R}$ s.t. $\textbf{R} \cdot \textbf{R}^T = \textbf{R}^T \cdot
-\textbf{R} = \textbf{I}$ 
-(with $\textbf{I}$ the identity matrix) on the
-coefficients of the MOs. The unitary transformation matrix or rotation 
-matrix is obtained by exponentiating an antihermithian matrix
-$\textbf{X}$, the elements $\textbf{X}_{ij}$ correspond to the
-rotation angle between the MO $i$ and the MO $j$. 
-In the case where two MOs ($\phi_p$,$\phi_q$) are combined between
-them at each iteration it is the Jacobi sweep method and the related
-rotation matrix is trivial: 
-\begin{align*}
-\textbf{R}=
-\begin{pmatrix}
-\cos(\theta_{pq}) & \sin(\theta_{pq}) \\
-- \sin(\theta_{pq}) & \cos(\theta_{pq})
-\end{pmatrix}
-\end{align*}
-
-The application of $\textbf{R}$ on $\phi_p$ and $\phi_q$ leads to:
-\begin{align*}
-\tilde{\phi}_p &=  \phi_p \cos(\theta_{pq}) + \phi_q \sin(\theta_{pq}) \\
-\tilde{\phi}_q &= -\phi_p \sin(\theta_{pq}) + \phi_q \cos(\theta_{pq})
-\end{align*}
-
-Consequently, the criterion becomes
-
-\begin{align*}
-C_{FB} &= \sum_{i=1}^N \left[ < \phi_i | r^2 | \phi_i > 
-- < \phi_i | r | \phi_i >^2 \right] \\ 
-&- \left[ < \phi_{p}| r^2 | \phi_{p} > - < \phi_{p} | r |
-\phi_{p} >^2 +  < \phi_{q} | r^2 | \phi_{q}
-> - < \phi_{q} | r | \phi_{q} >^2 \right] \\
-&+ \left[ < \tilde{\phi}_p| r^2 | \tilde{\phi}_p > - < \tilde{\phi}_p | r |
-\tilde{\phi}_p >^2 +  < \tilde{\phi}_q | r^2 | \tilde{\phi}_q
-> - < \tilde{\phi}_q | r | \tilde{\phi}_q >^2 \right] 
-\end{align*}
-
 Noting 
 $$A_{ii} = < \phi_i | r^2 | \phi_i > $$
 $$B_{ii} = < \phi_i | r | \phi_i > $$
-$$\tilde{\phi_p} = \tilde{p} $$ 
 
-\begin{align*}
-C_{FB}(\theta) &= \sum_{i=1}^N \left[ A_{ii} - A_{jj} \right] \\ 
-&- \left[  A_{pp} - B_{pp}^2 +  A_{qq} - B_{qq}^2 \right] \\
-&+ \left[ < \tilde{p}| r^2 | \tilde{p} > - < \tilde{p} | r |
-\tilde{p} >^2 +  < \tilde{q} | r^2 | {\tilde{q}}
-> - < \tilde{q} | r | \tilde{q} >^2 \right] 
-\end{align*}
-
-From that we have
-\begin{align*}
-< \tilde{p}| r^2 | \tilde{p} > &= <  p \cos(\theta) + q \sin(\theta) | r^2 | p \cos(\theta) + q \sin(\theta) > \\
-&= \cos^2(\theta) A_{pp} + \sin^2(\theta) A_{qq} + 2 \sin(2 \theta) A_{pq}
-\end{align*}
-
-and 
-\begin{align*}
-< \tilde{q}| r^2 | \tilde{q} > &= <  -p \sin(\theta) + q \cos(\theta) | r^2 | -p \sin(\theta) + q \cos(\theta) > \\
-&= \sin^2(\theta) A_{pp} + \cos^2(\theta) A_{qq} - 2 \sin(2 \theta) A_{pq}
-\end{align*}
-
-which leads to
-\begin{align*}
-< \tilde{p}| r^2 | \tilde{p} > + < \tilde{q}| r^2 | \tilde{q} > =
-A_{pp} + A_{qq}.
-\end{align*}
-
-Clearly, these two terms do not depend of the rotation angle
-$\theta_{pq}$. For that reason the derivatives with respect to $\textbf{X}$ of $C_{FB}$ is the same
-that $-C_3$.
-
-And for the two other terms
-\begin{align*}
-< \tilde{p}| r | \tilde{p} >^2 &= <  p \cos(\theta) + q \sin(\theta) | r | p \cos(\theta) + q \sin(\theta) >^2 \\
-&= (\cos^2(\theta) B_{pp} + \sin^2(\theta) B_{qq} + 2 \sin(2 \theta) B_{pq})^2
-\end{align*}
-
-\begin{align*}
-< \tilde{q}| r | \tilde{q} >^2 &= <  -p \sin(\theta) + q \cos(\theta) | r | -p \sin(\theta) + q \cos(\theta) >^2 \\
-&= (\sin^2(\theta) B_{pp} + \cos^2(\theta) B_{qq} - 2 \sin(2 \theta) B_{pq})^2
-\end{align*}
-
-So we have
-\begin{align*}
-< \tilde{p}| r | \tilde{p} >^2 + < \tilde{q}| r | \tilde{q} >^2 &= (\cos^4(\theta) + \sin^4(\theta)) B_{pp}^2 \\
-&+ (\cos^4(\theta) + \sin^4(\theta)) B_{qq}^2 \\
-&+ (2 \cos^2(\theta)\sin(2 \theta) - 2 \sin^2(\theta)\sin(2 \theta)) B_{qq} B_{pq} \\
-&+ (2 \sin^2(\theta)\sin(2 \theta) - 2 \cos^2(\theta)\sin(2 \theta)) B_{pp} B_{pq} \\
-&+ 4 \cos^2(\theta) \sin^2(\theta) B_{pp} B_{qq} \\
-&+ 2 \sin^2(2 \theta) B_{pq}^2.
-\end{align*}
-
-Since:
-$$\cos^2(\theta) - \sin^2(\theta) = \cos(2 \theta) $$
-$$\sin(\theta) \cos(\theta) = \frac{1}{2} \sin(2 \theta) $$
-$$\sin^2(\theta) = \frac{1 - \cos(2 \theta)}{2}  $$
-It becomes
-\begin{align*}
-< \tilde{p}| r | \tilde{p} >^2 + < \tilde{q}| r | \tilde{q} >^2 &= (\cos^4(\theta) + \sin^4(\theta)) (B_{pp}^2 + B_{pp}^2) \\
-&+ \sin(4\theta) B_{pq} (-B_{pp} + B_{qq}) \\
-&+ \sin^2(2\theta) B_{pp} B_{qq} \\
-&+ 2 \sin^2(2\theta) B_{pq}^2
-\end{align*}
-
-And with
-$$ \cos^4(\theta) + \sin^4(\theta) = \frac{1}{4} (3 + \cos(4\theta))$$
-
-we have
-\begin{align*}
-< \tilde{p}| r | \tilde{p} >^2 + < \tilde{q}| r | \tilde{q} >^2 
-&= B_{pp}^2 + B_{qq}^2 -\frac{1}{4} [(1-\cos(4\theta) \beta + \sin(4\theta) \gamma].
-\end{align*}
-
-with
 $$ \beta = (B_{pp} - B_{qq})^2 - 4 B_{pq}^2 $$ 
 $$ \gamma = 4 B_{pq} (B_{pp} - B_{qq}) $$
 
-Consequently:
 \begin{align*}
 C_{FB}(\theta) &= \sum_{i=1}^N \left[ A_{ii} - B_{ii}^2 \right] \\ 
 &- \left[  A_{pp} - B_{pp}^2 +  A_{qq} - B_{qq}^2 \right] \\
@@ -256,24 +125,6 @@ second moment of the MO spread. For the MO i, the locality criterion is
 &= \sqrt{ <i|x^2|i> - <i|x|i>^2 + <i|y^2|i> - <i|y|i>^2 + <i|z^2|i> - <i|z|i>^2}
 \end{align*} 
 
-Localization procedure:
-
-To do the localization we have compute the gradient and the
-diagonal hessian of the Foster-Boys criterion with respect to the MO
-rotations and we minimize it with the Newton method.
-Since we already have compute the first and second derivatives of the
-FB criterion with respect to the MO rotations (for $\theta = 0$) we have the analytical gradient
-and diagonal hessian. Hovik uses an other method in her algorithm and
-it seems to work very for big systems.
-
-In order to avoid the problem of starting on a saddle point, the
-localization procedure starts by giving a little kick in the MOs, by
-putting "kick in mos" true, in order to break the symmetry and escape
-from a possible saddle point.
-
-In order to speed up the iteration we compute the gradient, the
-diagonal hessian and the step in temporary matrices of the size
-(number MOs in mo class by number MOs in mo class)
 
 *** Pipek-Mezey localization
 -cite pipek mezey 1989
@@ -283,51 +134,6 @@ DOI: 10.1063/1.456588
 Foster-Boys localization does not preserve the $\sigma - \pi$ separation of the
 MOs, it leads to "banana" orbitals. The Pipek-Mezey localization
 normally preserves this separation.
-
-Their localization method starts from fact that the localization of the
-MOs can be definined as
-\begin{align*}
-d_i = \left( \sum_{A = 1}^N (Q_A^i)^2 \right)^{-1}, \quad 0 < d_i < N
-\end{align*}
-with $A$ representing the differents atoms of the moleculs and $Q_A^i$
-the Mulliken population of the MO $i$. 
-From that the mean delocalization is 
-\begin{align*}
-D^{-1} = n^{-1} \sum_{i=1}^n d_i^{-1}, \quad 0 < D \leq D_{max} \leq N
-\end{align*}
-where
-\begin{align*}
-D_{max} &= \frac{n^2}{\sum_{A=1}^N \textbf{Q}_A^2} \\
-&= \frac{\left( \sum_{A=1}^N \textbf{Q}_A\right)^2}{\sum_{A=1}^N \textbf{Q}_A^2}
-\end{align*}
-"with $\textbf{Q}_A$ is the total atomic charges
-(populations) which are invariant to any unitary transformation."
-" $D$ measures the mean extension of the one-electron orbitals
-As for the Foster-Boys method we have to search the unitary
-transformation which minimizes $D$. "
-
-They defined for each AOs $|\mu>$ the corresponding operator 
-\begin{align*}
-P_{\mu} = P_{\mu}^{\dagger} = \frac{1}{2}
-\left( |\tilde{\mu} > < \mu| + |\mu > < \tilde{\mu}| \right)
-\end{align*}
-with
-\begin{align*}
-|\tilde{\mu} > = \sum_{\nu} (\textbf{S})^{-1}_{\nu \mu} |\nu>
-\end{align*}
-and $\textbf{S}$ the overlap matrix,
-\begin{align*}
-S_{\mu \nu} = < \mu | \nu >
-\end{align*}
-
-Then the population operator is defined as
-\begin{align*}
-P_A = P_A^{\dagger} = \sum_{\mu \in A} P_{\mu}
-\end{align*}
-and the atomic population of (normalized) MO $|i>$ is 
-\begin{align*}
-Q_A^i = < i | P_A | i >
-\end{align*}
 
 The optimum functional $\mathcal{P}$ is obtained for the maximum of
 $D^{-1}$
@@ -364,6 +170,23 @@ So similarly the first and second derivatives are
 \begin{align*}
 \left. \frac{\partial^2 \mathcal{P} (\theta)}{\partial \theta^2}\right|_{\theta=0} = 4 \beta^{PM}
 \end{align*}
+
+** Localization procedure
+
+Localization procedure:
+
+To do the localization we compute the gradient and the
+diagonal hessian of the Foster-Boys criterion with respect to the MO
+rotations and we minimize it with the Newton method.
+
+In order to avoid the problem of starting on a saddle point, the
+localization procedure starts by giving a little kick in the MOs, by
+putting "kick in mos" true, in order to break the symmetry and escape
+from a possible saddle point.
+
+In order to speed up the iteration we compute the gradient, the
+diagonal hessian and the step in temporary matrices of the size
+(number MOs in mo class by number MOs in mo class)
 
 ** Remarks
 
@@ -531,25 +354,29 @@ Cf. qp_edit orbital optimization
 #+BEGIN_SRC f90 :comments org :tangle localization.irp.f
 subroutine run_localization
 
-  include 'constants.h'
+  include 'pi.h'
+
+  BEGIN_DOC
+  ! Orbital localization
+  END_DOC
 
   implicit none
 
   ! Variables
   double precision, allocatable :: pre_rot(:,:), R(:,:)
   double precision, allocatable :: prev_mos(:,:), spatial_extent(:), tmp_R(:,:)
-  double precision :: criterion, norm_grad
-  integer          :: i,j,k,l,p, tmp_i, tmp_j, tmp_k
-  integer          :: info
-  integer          :: n, tmp_n, tmp_list_size
+  double precision              :: criterion, norm_grad
+  integer                       :: i,j,k,l,p, tmp_i, tmp_j, tmp_k
+  integer                       :: info
+  integer                       :: n, tmp_n, tmp_list_size
   double precision, allocatable :: v_grad(:), H(:,:), tmp_m_x(:,:), tmp_x(:),W(:,:),e_val(:)
-  double precision :: max_elem, t1, t2, t3, t4, t5, t6
-  integer, allocatable :: tmp_list(:), key(:)
-  double precision :: prev_criterion, rho, delta, criterion_model
-  integer :: nb_iter, nb_sub_iter
-  logical :: not_converged, not_core_converged
-  logical :: not_act_converged, not_inact_converged, not_virt_converged
-  logical :: use_trust_region, must_exit, cancel_step,enforce_step_cancellation
+  double precision              :: max_elem, t1, t2, t3, t4, t5, t6
+  integer, allocatable          :: tmp_list(:), key(:)
+  double precision              :: prev_criterion, rho, delta, criterion_model
+  integer                       :: nb_iter, nb_sub_iter
+  logical                       :: not_converged, not_core_converged
+  logical                       :: not_act_converged, not_inact_converged, not_virt_converged
+  logical                       :: use_trust_region, must_exit, cancel_step,enforce_step_cancellation
 
   n = mo_num*(mo_num-1)/2
 
@@ -768,147 +595,222 @@ subroutine run_localization
 
     ! Size for the 2D -> 1D transformation 
     tmp_n = tmp_list_size * (tmp_list_size - 1)/2
-  
-    ! Allocation of temporary arrays
-    allocate(v_grad(tmp_n), H(tmp_n, tmp_n), tmp_m_x(tmp_list_size, tmp_list_size))
-    allocate(tmp_R(tmp_list_size, tmp_list_size))
-    allocate(tmp_x(tmp_n), W(tmp_n,tmp_n), e_val(tmp_n), key(tmp_n))
 
-    ! ### Initialization ###
-    delta = 0d0 ! can be deleted (normally)
-    nb_iter = 0 ! Must start at 0 !!!
-    rho = 0.5d0 ! Must be 0.5
+    ! Without hessian + trust region 
+    if (.not. localization_use_hessian) then
+       
+      ! Allocation of temporary arrays
+      allocate(v_grad(tmp_n), tmp_m_x(tmp_list_size, tmp_list_size))
+      allocate(tmp_R(tmp_list_size, tmp_list_size), tmp_x(tmp_n))
 
-    ! Compute the criterion before the loop
-    call criterion_localization(tmp_list_size, tmp_list, prev_criterion)
+      ! Criterion
+      call criterion_localization(tmp_list_size, tmp_list, prev_criterion)
 
-    ! Loop until the convergence
-    do while (not_converged)
+      ! Init
+      nb_iter = 0
+      delta = 1d0
 
-      print*,''
-      print*,'***********************'
-      print*,'Iteration', nb_iter
-      print*,'***********************'
-      print*,''
-  
-      ! Gradient
-      call gradient_localization(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_grad)
-      ! Diagonal hessian
-      call hessian_localization(tmp_n, tmp_list_size, tmp_list, H)
-      
-      ! Diagonalization of the diagonal hessian by hands
-      !call diagonalization_hessian(tmp_n,H,e_val,w)
-      do i = 1, tmp_n
-        e_val(i) = H(i,i)
-      enddo
+      !Loop
+      do while (not_converged)
+         
+        print*,''
+        print*,'***********************'
+        print*,'Iteration', nb_iter
+        print*,'***********************'
+        print*,''
+        
+        ! Angles of rotation
+        call theta_localization(tmp_list, tmp_list_size, tmp_m_x, max_elem)
+        tmp_m_x = - tmp_m_x * delta
 
-      ! Key list for dsort
-      do i = 1, tmp_n 
-        key(i) = i
-      enddo
-
-      ! Sort of the eigenvalues
-      call dsort(e_val, key, tmp_n)
-
-      ! Eigenvectors
-      W = 0d0
-      do i = 1, tmp_n
-        j = key(i)
-        W(j,i) = 1d0
-      enddo
-
-      ! To enter in the loop just after
-      cancel_step = .True.
-      nb_sub_iter = 0 
-
-      ! Loop to reduce the trust radius until the criterion decreases and rho >= thresh_rho
-      do while (cancel_step)
-        print*,'-----------------------------'
-        print*, mo_class(tmp_list(1))
-        print*,'Iteration:', nb_iter
-        print*,'Sub iteration:', nb_sub_iter
-        print*,'-----------------------------'
-
-        ! Hessian,gradient,Criterion -> x 
-        call trust_region_step_w_expected_e(tmp_n, H, W, e_val, v_grad, prev_criterion, &
-             rho, nb_iter, delta, criterion_model, tmp_x, must_exit)
-
-        ! Internal loop exit condition
-        if (must_exit) then
-          print*,'trust_region_step_w_expected_e sent the message : Exit'
-          exit 
-        endif
-
-        ! 1D tmp -> 2D tmp 
-        call vec_to_mat_v2(tmp_n, tmp_list_size, tmp_x, tmp_m_x)
-
-        ! Rotation submatrix (square matrix tmp_list_size by tmp_list_size)
+        ! Rotation submatrix
         call rotation_matrix(tmp_m_x, tmp_list_size, tmp_R, tmp_list_size, tmp_list_size, &
              info, enforce_step_cancellation)
 
+        ! To ensure that the rotation matrix is unitary
         if (enforce_step_cancellation) then
-          print*, 'Forces the step cancellation, too large error in the rotation matrix'
-          rho = 0d0
+          print*, 'Step cancellation, too large error in the rotation matrix'
+          delta = delta * 0.5d0
           cycle
+        else
+          delta = min(delta * 2d0, 1d0)
         endif
 
-        ! tmp_R to R, subspace to full space
+        ! Full rotation matrix and application of the rotation
         call sub_to_full_rotation_matrix(tmp_list_size, tmp_list, tmp_R, R)
-      
-        ! Rotation of the MOs
-        call apply_mo_rotation(R, prev_mos)   
+        call apply_mo_rotation(R, prev_mos)
 
-        ! Update the things related to mo_coef
+        ! Update the needed data
         call update_data_localization()
 
-        ! Update the criterion
+        ! New criterion
         call criterion_localization(tmp_list_size, tmp_list, criterion)
         print*,'Criterion:', trim(mo_class(tmp_list(1))), nb_iter, criterion
+        print*,'Max elem :', max_elem
+        print*,'Delta    :', delta
+        
+        nb_iter = nb_iter + 1
 
-        ! Criterion -> step accepted or rejected 
-        call trust_region_is_step_cancelled(nb_iter, prev_criterion, criterion, &
-             criterion_model, rho, cancel_step)
-
-        ! Cancellation of the step, previous MOs
-        if (cancel_step) then
-          mo_coef = prev_mos
+        ! Exit
+        if (nb_iter >= localization_max_nb_iter .or. dabs(max_elem) < thresh_loc_max_elem_grad) then
+           not_converged = .False.
         endif
-
-        nb_sub_iter = nb_sub_iter + 1
       enddo
-      !call save_mos() !### depend of the time for 1 iteration
 
-      ! To exit the external loop if must_exti = .True.
-      if (must_exit) then
-        exit
-      endif 
+      ! Save the changes
+      call update_data_localization()
+      call save_mos()
+      TOUCH mo_coef
 
-      ! Step accepted, nb iteration + 1
-      nb_iter = nb_iter + 1
+      ! Deallocate
+      deallocate(v_grad, tmp_m_x, tmp_list)
+      deallocate(tmp_R, tmp_x)
 
-      ! External loop exit conditions
-      if (DABS(max_elem) < thresh_loc_max_elem_grad) then
-        not_converged = .False.
-      endif
-      if (nb_iter > localization_max_nb_iter) then
-        not_converged = .False.
-      endif
-    enddo
-
-    ! Deallocation of temporary arrays
-    deallocate(v_grad, H, tmp_m_x, tmp_R, tmp_list, tmp_x, W, e_val, key)
+    ! Trust region
+    else
     
-    ! Save the MOs
-    call save_mos()
-    TOUCH mo_coef
+      ! Allocation of temporary arrays
+      allocate(v_grad(tmp_n), H(tmp_n, tmp_n), tmp_m_x(tmp_list_size, tmp_list_size))
+      allocate(tmp_R(tmp_list_size, tmp_list_size))
+      allocate(tmp_x(tmp_n), W(tmp_n,tmp_n), e_val(tmp_n), key(tmp_n))
+
+      ! ### Initialization ###
+      delta = 0d0 ! can be deleted (normally)
+      nb_iter = 0 ! Must start at 0 !!!
+      rho = 0.5d0 ! Must be 0.5
+
+      ! Compute the criterion before the loop
+      call criterion_localization(tmp_list_size, tmp_list, prev_criterion)
+
+      ! Loop until the convergence
+      do while (not_converged)
+
+        print*,''
+        print*,'***********************'
+        print*,'Iteration', nb_iter
+        print*,'***********************'
+        print*,''
+  
+        ! Gradient
+        call gradient_localization(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_grad)
+        ! Diagonal hessian
+        call hessian_localization(tmp_n, tmp_list_size, tmp_list, H)
+        
+        ! Diagonalization of the diagonal hessian by hands
+        !call diagonalization_hessian(tmp_n,H,e_val,w)
+        do i = 1, tmp_n
+          e_val(i) = H(i,i)
+        enddo
+
+        ! Key list for dsort
+        do i = 1, tmp_n 
+          key(i) = i
+        enddo
+
+        ! Sort of the eigenvalues
+        call dsort(e_val, key, tmp_n)
+
+        ! Eigenvectors
+        W = 0d0
+        do i = 1, tmp_n
+          j = key(i)
+          W(j,i) = 1d0
+        enddo
+
+        ! To enter in the loop just after
+        cancel_step = .True.
+        nb_sub_iter = 0 
+
+        ! Loop to reduce the trust radius until the criterion decreases and rho >= thresh_rho
+        do while (cancel_step)
+          print*,'-----------------------------'
+          print*, mo_class(tmp_list(1))
+          print*,'Iteration:', nb_iter
+          print*,'Sub iteration:', nb_sub_iter
+          print*,'-----------------------------'
+
+          ! Hessian,gradient,Criterion -> x 
+          call trust_region_step_w_expected_e(tmp_n, H, W, e_val, v_grad, prev_criterion, &
+               rho, nb_iter, delta, criterion_model, tmp_x, must_exit)
+
+          ! Internal loop exit condition
+          if (must_exit) then
+            print*,'trust_region_step_w_expected_e sent: Exit'
+            exit 
+          endif
+
+          ! 1D tmp -> 2D tmp 
+          call vec_to_mat_v2(tmp_n, tmp_list_size, tmp_x, tmp_m_x)
+
+          ! Rotation submatrix (square matrix tmp_list_size by tmp_list_size)
+          call rotation_matrix(tmp_m_x, tmp_list_size, tmp_R, tmp_list_size, tmp_list_size, &
+               info, enforce_step_cancellation)
+
+          if (enforce_step_cancellation) then
+            print*, 'Step cancellation, too large error in the rotation matrix'
+            rho = 0d0
+            cycle
+          endif
+
+          ! tmp_R to R, subspace to full space
+          call sub_to_full_rotation_matrix(tmp_list_size, tmp_list, tmp_R, R)
+        
+          ! Rotation of the MOs
+          call apply_mo_rotation(R, prev_mos)   
+
+          ! Update the things related to mo_coef
+          call update_data_localization()
+
+          ! Update the criterion
+          call criterion_localization(tmp_list_size, tmp_list, criterion)
+          print*,'Criterion:', trim(mo_class(tmp_list(1))), nb_iter, criterion
+
+          ! Criterion -> step accepted or rejected 
+          call trust_region_is_step_cancelled(nb_iter, prev_criterion, criterion, &
+               criterion_model, rho, cancel_step)
+
+          ! Cancellation of the step, previous MOs
+          if (cancel_step) then
+            mo_coef = prev_mos
+          endif
+
+          nb_sub_iter = nb_sub_iter + 1
+        enddo
+        !call save_mos() !### depend of the time for 1 iteration
+
+        ! To exit the external loop if must_exti = .True.
+        if (must_exit) then
+          exit
+        endif 
+
+        ! Step accepted, nb iteration + 1
+        nb_iter = nb_iter + 1
+
+        ! External loop exit conditions
+        if (DABS(max_elem) < thresh_loc_max_elem_grad) then
+          not_converged = .False.
+        endif
+        if (nb_iter > localization_max_nb_iter) then
+          not_converged = .False.
+        endif
+      enddo
+
+      ! Deallocation of temporary arrays
+      deallocate(v_grad, H, tmp_m_x, tmp_R, tmp_list, tmp_x, W, e_val, key)
+      
+      ! Save the MOs
+      call save_mos()
+      TOUCH mo_coef
  
-    ! Debug
-    if (debug_hf) then
-      touch mo_coef
-      print*,'HF energy:', HF_energy
+      ! Debug
+      if (debug_hf) then
+        touch mo_coef
+        print*,'HF energy:', HF_energy
+      endif
+      
     endif
-    
   enddo
+
 
   TOUCH mo_coef 
 
@@ -929,7 +831,7 @@ subroutine run_localization
 end   
 #+END_SRC
 
-** Rassemblement bourrin
+** Gathering
 Gradient/hessian/criterion for the localization:
 They are chosen in function of the localization method
 
@@ -952,11 +854,15 @@ Output:
 #+BEGIN_SRC f90 :comments org :tangle localization_sub.irp.f
 subroutine gradient_localization(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_grad)
   
-  include 'constants.h'
+  include 'pi.h'
 
   implicit none
+
+  BEGIN_DOC
+  ! Compute the gradient of the chosen localization method
+  END_DOC
   
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: v_grad(tmp_n), max_elem, norm_grad
 
   if (localization_method == 'boys') then
@@ -965,9 +871,8 @@ subroutine gradient_localization(tmp_n, tmp_list_size, tmp_list, v_grad, max_ele
   elseif (localization_method== 'pipek') then
     call gradient_PM(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_grad)
   else
-    v_grad = 0d0
-    max_elem = 0d0
-    norm_grad = 0d0
+    print*,'Unkown method:'//localization_method
+    call abort
   endif
 
 end
@@ -983,20 +888,25 @@ Output:
 #+BEGIN_SRC f90 :comments org :tangle localization_sub.irp.f
 subroutine hessian_localization(tmp_n, tmp_list_size, tmp_list, H)
 
-  include 'constants.h'
+  include 'pi.h'
 
   implicit none
 
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  BEGIN_DOC
+  ! Compute the diagonal hessian of the chosen localization method
+  END_DOC
+
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: H(tmp_n, tmp_n)
 
   if (localization_method == 'boys') then
     call hessian_FB_omp(tmp_n, tmp_list_size, tmp_list, H)
-    !call hessian_FB(tmp_n, tmp_list_size, tmp_list, H)
+    !call hessian_FB(tmp_n, tmp_list_size, tmp_list, H) ! non OMP for debugging
   elseif (localization_method == 'pipek') then
     call hessian_PM(tmp_n, tmp_list_size, tmp_list, H)
   else
-    H = 0d0
+    print*,'Unkown method: '//localization_method
+    call abort
   endif
 
 end
@@ -1010,22 +920,25 @@ Output:
 #+BEGIN_SRC f90 :comments org :tangle localization_sub.irp.f
 subroutine criterion_localization(tmp_list_size, tmp_list,criterion)
 
-  include 'constants.h'
+  include 'pi.h'
   
   implicit none
 
-  integer, intent(in) :: tmp_list_size, tmp_list(tmp_list_size)
+  BEGIN_DOC
+  ! Compute the localization criterion of the chosen localization method
+  END_DOC
+
+  integer, intent(in)           :: tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: criterion
 
   if (localization_method == 'boys') then
     call criterion_FB(tmp_list_size, tmp_list, criterion)
   elseif (localization_method == 'pipek') then
     !call criterion_PM(tmp_list_size, tmp_list,criterion)
-    !print*,'v1', criterion
     call criterion_PM_v3(tmp_list_size, tmp_list, criterion)
-    !print*,'v3', criterion
   else
-    criterion = 0d0
+    print*,'Unkown method: '//localization_method
+    call abort
   endif
 
 end
@@ -1035,7 +948,7 @@ Subroutine to update the datas needed for the localization
 #+BEGIN_SRC f90 :comments org :tangle localization_sub.irp.f
 subroutine update_data_localization()
 
-  include 'constants.h'
+  include 'pi.h'
 
   implicit none
 
@@ -1045,8 +958,44 @@ subroutine update_data_localization()
     call ao_to_mo_no_sym(ao_dipole_y, ao_num, mo_dipole_y, mo_num)
     call ao_to_mo_no_sym(ao_dipole_z, ao_num, mo_dipole_z, mo_num)
   elseif (localization_method == 'pipek') then
+    ! Nothing required
   else
+    print*,'Unkown method: '//localization_method
+    call abort
   endif
+end
+#+END_SRC
+
+Angles:
+
+Output:
+| tmp_m_x(tmp_list_size, tmp_list_size) | double precision | Angles for the rotations in the subspace |
+| max_elem                              | double precision | Maximal angle                            |
+
+
+#+BEGIN_SRC f90 :comments org :tangle localization_sub.irp.f
+subroutine theta_localization(tmp_list, tmp_list_size, tmp_m_x, max_elem)
+  
+  include 'pi.h'
+
+  implicit none
+
+  BEGIN_DOC
+  ! Compute the rotation angles between the MOs for the chosen localization method
+  END_DOC
+  
+  integer, intent(in)           :: tmp_list_size, tmp_list(tmp_list_size)
+  double precision, intent(out) :: tmp_m_x(tmp_list_size,tmp_list_size), max_elem
+
+  if (localization_method == 'boys') then
+    call theta_FB(tmp_list, tmp_list_size, tmp_m_x, max_elem)
+  elseif (localization_method== 'pipek') then
+    call theta_PM(tmp_list, tmp_list_size, tmp_m_x, max_elem)
+  else
+    print*,'Unkown method: '//localization_method
+    call abort
+  endif
+
 end
 #+END_SRC
 
@@ -1073,11 +1022,15 @@ subroutine gradient_FB(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_gr
   
   implicit none
   
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  BEGIN_DOC
+  ! Compute the gradient for the Foster-Boys localization
+  END_DOC
+  
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: v_grad(tmp_n), max_elem, norm_grad
   double precision, allocatable :: m_grad(:,:)
-  integer :: i,j,k,tmp_i,tmp_j,tmp_k
-  double precision :: t1, t2, t3
+  integer                       :: i,j,k,tmp_i,tmp_j,tmp_k
+  double precision              :: t1, t2, t3
 
   print*,''
   print*,'---gradient_FB---'
@@ -1144,12 +1097,16 @@ subroutine gradient_FB_omp(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, nor
   use omp_lib
 
   implicit none
+
+  BEGIN_DOC
+  ! Compute the gradient for the Foster-Boys localization
+  END_DOC
   
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: v_grad(tmp_n), max_elem, norm_grad
   double precision, allocatable :: m_grad(:,:)
-  integer :: i,j,k,tmp_i,tmp_j,tmp_k
-  double precision :: t1, t2, t3
+  integer                       :: i,j,k,tmp_i,tmp_j,tmp_k
+  double precision              :: t1, t2, t3
 
   print*,''
   print*,'---gradient_FB_omp---'
@@ -1243,12 +1200,16 @@ Internal:
 subroutine hessian_FB(tmp_n, tmp_list_size, tmp_list, H)
 
   implicit none
+  
+  BEGIN_DOC
+  ! Compute the diagonal hessian for the Foster-Boys localization
+  END_DOC
 
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: H(tmp_n, tmp_n)
   double precision, allocatable :: beta(:,:)
-  integer :: i,j,tmp_k,tmp_i, tmp_j
-  double precision :: max_elem, t1,t2,t3
+  integer                       :: i,j,tmp_k,tmp_i, tmp_j
+  double precision              :: max_elem, t1,t2,t3
    
   print*,''
   print*,'---hessian_FB---'
@@ -1325,11 +1286,15 @@ subroutine hessian_FB_omp(tmp_n, tmp_list_size, tmp_list, H)
 
   implicit none
 
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  BEGIN_DOC
+  ! Compute the diagonal hessian for the Foster-Boys localization
+  END_DOC
+
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: H(tmp_n, tmp_n)
   double precision, allocatable :: beta(:,:)
-  integer :: i,j,tmp_k,tmp_i, tmp_j
-  double precision :: max_elem, t1,t2,t3
+  integer                       :: i,j,tmp_k,tmp_i,tmp_j
+  double precision              :: max_elem, t1,t2,t3
    
   print*,''
   print*,'---hessian_FB_omp---'
@@ -1430,11 +1395,15 @@ end subroutine
 subroutine grad_pipek(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_grad)
 
   implicit none
-  
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+
+  BEGIN_DOC
+  ! Compute gradient for the Pipek-Mezey localization
+  END_DOC
+
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: v_grad(tmp_n), max_elem, norm_grad
   double precision, allocatable :: m_grad(:,:), tmp_int(:,:)
-  integer :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho 
+  integer                       :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho 
 
   ! Allocation
   allocate(m_grad(tmp_list_size, tmp_list_size), tmp_int(tmp_list_size, tmp_list_size))
@@ -1443,54 +1412,54 @@ subroutine grad_pipek(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_gra
   m_grad = 0d0
 
   do a = 1, nucl_num ! loop over the nuclei
-    tmp_int = 0d0 ! Initialization for each nuclei
+     tmp_int = 0d0 ! Initialization for each nuclei
 
-    ! Loop over the MOs of the a given mo_class to compute <i|Q_a|j>
-    do tmp_j = 1, tmp_list_size
-      j = tmp_list(tmp_j) 
-      do tmp_i = 1, tmp_list_size
-        i = tmp_list(tmp_i)
-        do rho = 1, ao_num ! loop over all the AOs
-          do b = 1, nucl_n_aos(a) ! loop over the number of AOs which belongs to the nuclei a
-            mu = nucl_aos(a,b) ! AO centered on atom a 
+     ! Loop over the MOs of the a given mo_class to compute <i|P_a|j>
+     do tmp_j = 1, tmp_list_size
+        j = tmp_list(tmp_j) 
+        do tmp_i = 1, tmp_list_size
+           i = tmp_list(tmp_i)
+           do rho = 1, ao_num ! loop over all the AOs
+              do b = 1, nucl_n_aos(a) ! loop over the number of AOs which belongs to the nuclei a
+                 mu = nucl_aos(a,b) ! AO centered on atom a 
 
-            tmp_int(tmp_i,tmp_j) = tmp_int(tmp_i,tmp_j) + 0.5d0 * (mo_coef(rho,i) * ao_overlap(rho,mu) * mo_coef(mu,j) &
-                                   + mo_coef(mu,i) * ao_overlap(mu,rho) * mo_coef(rho,j))
+                 tmp_int(tmp_i,tmp_j) = tmp_int(tmp_i,tmp_j) + 0.5d0 * (mo_coef(rho,i) * ao_overlap(rho,mu) * mo_coef(mu,j) &
+                      + mo_coef(mu,i) * ao_overlap(mu,rho) * mo_coef(rho,j))
 
-          enddo
-        enddo  
-      enddo
-    enddo
+              enddo
+           enddo
+        enddo
+     enddo
 
-    ! Gradient
-    do tmp_j = 1, tmp_list_size
-      do tmp_i = 1, tmp_list_size
+     ! Gradient
+     do tmp_j = 1, tmp_list_size
+        do tmp_i = 1, tmp_list_size
 
-        m_grad(tmp_i,tmp_j) = m_grad(tmp_i,tmp_j) +  4d0 * tmp_int(tmp_i,tmp_j) * (tmp_int(tmp_i,tmp_i) - tmp_int(tmp_j,tmp_j))
+           m_grad(tmp_i,tmp_j) = m_grad(tmp_i,tmp_j) +  4d0 * tmp_int(tmp_i,tmp_j) * (tmp_int(tmp_i,tmp_i) - tmp_int(tmp_j,tmp_j))
 
-      enddo
-    enddo
+        enddo
+     enddo
 
   enddo
 
   ! 2D -> 1D
   do tmp_k = 1, tmp_n
-    call vec_to_mat_index(tmp_k,tmp_i,tmp_j)
-    v_grad(tmp_k) = m_grad(tmp_i,tmp_j) 
+     call vec_to_mat_index(tmp_k,tmp_i,tmp_j)
+     v_grad(tmp_k) = m_grad(tmp_i,tmp_j) 
   enddo
 
   ! Maximum element in the gradient
   max_elem = 0d0
   do tmp_k = 1, tmp_n
-    if (ABS(v_grad(tmp_k)) > max_elem) then
-      max_elem = ABS(v_grad(tmp_k))
-    endif
-  enddo 
-  
+     if (ABS(v_grad(tmp_k)) > max_elem) then
+        max_elem = ABS(v_grad(tmp_k))
+     endif
+  enddo
+
   ! Norm of the gradient
   norm_grad = 0d0
   do tmp_k = 1, tmp_n
-    norm_grad = norm_grad + v_grad(tmp_k)**2
+     norm_grad = norm_grad + v_grad(tmp_k)**2
   enddo
   norm_grad = dsqrt(norm_grad)
 
@@ -1500,7 +1469,7 @@ subroutine grad_pipek(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_gra
   ! Deallocation
   deallocate(m_grad,tmp_int)
 
-end
+end subroutine grad_pipek
 #+END_SRC
 
 *** Gradient
@@ -1553,12 +1522,16 @@ Internal:
 subroutine gradient_PM(tmp_n, tmp_list_size, tmp_list, v_grad, max_elem, norm_grad)
 
   implicit none
+
+  BEGIN_DOC
+  ! Compute gradient for the Pipek-Mezey localization
+  END_DOC
   
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: v_grad(tmp_n), max_elem, norm_grad
   double precision, allocatable :: m_grad(:,:), tmp_int(:,:), CS(:,:), tmp_mo_coef(:,:), tmp_mo_coef2(:,:),tmp_accu(:,:),tmp_CS(:,:)
-  integer :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho
-  double precision :: t1,t2,t3
+  integer                       :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho
+  double precision              :: t1,t2,t3
 
   print*,''
   print*,'---gradient_PM---'
@@ -1688,11 +1661,15 @@ subroutine hess_pipek(tmp_n, tmp_list_size, tmp_list, H)
 
   implicit none
 
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  BEGIN_DOC
+  ! Compute diagonal hessian for the Pipek-Mezey localization
+  END_DOC
+
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: H(tmp_n, tmp_n)
   double precision, allocatable :: beta(:,:),tmp_int(:,:)
-  integer :: i,j,tmp_k,tmp_i, tmp_j, a,b,rho,mu
-  double precision :: max_elem
+  integer                       :: i,j,tmp_k,tmp_i, tmp_j, a,b,rho,mu
+  double precision              :: max_elem
     
   ! Allocation
   allocate(beta(tmp_list_size,tmp_list_size),tmp_int(tmp_list_size,tmp_list_size))
@@ -1735,29 +1712,29 @@ subroutine hess_pipek(tmp_n, tmp_list_size, tmp_list, H)
     H(tmp_k,tmp_k) = 4d0 * beta(tmp_i, tmp_j)
   enddo
   
-  max_elem = 0d0
-  do tmp_k = 1, tmp_n
-    if (H(tmp_k,tmp_k) < max_elem) then
-      max_elem = H(tmp_k,tmp_k)
-    endif
-  enddo
-  print*, 'Min elem H:', max_elem
-
-  max_elem = 0d0
-  do tmp_k = 1, tmp_n
-    if (H(tmp_k,tmp_k) > max_elem) then
-      max_elem = H(tmp_k,tmp_k)
-    endif
-  enddo
-  print*, 'Max elem H:', max_elem
-  
-  max_elem = 1d10
-  do tmp_k = 1, tmp_n
-    if (ABS(H(tmp_k,tmp_k)) < ABS(max_elem)) then
-      max_elem = H(tmp_k,tmp_k)
-    endif
-  enddo
-  print*, 'Near 0 elem H:', max_elem
+!  max_elem = 0d0
+!  do tmp_k = 1, tmp_n
+!    if (H(tmp_k,tmp_k) < max_elem) then
+!      max_elem = H(tmp_k,tmp_k)
+!    endif
+!  enddo
+!  print*, 'Min elem H:', max_elem
+!
+!  max_elem = 0d0
+!  do tmp_k = 1, tmp_n
+!    if (H(tmp_k,tmp_k) > max_elem) then
+!      max_elem = H(tmp_k,tmp_k)
+!    endif
+!  enddo
+!  print*, 'Max elem H:', max_elem
+!  
+!  max_elem = 1d10
+!  do tmp_k = 1, tmp_n
+!    if (ABS(H(tmp_k,tmp_k)) < ABS(max_elem)) then
+!      max_elem = H(tmp_k,tmp_k)
+!    endif
+!  enddo
+!  print*, 'Near 0 elem H:', max_elem
 
   ! Deallocation
   deallocate(beta,tmp_int)
@@ -1787,12 +1764,16 @@ $c^t$ -> expansion coefficient of orbital |t>
 subroutine hessian_PM(tmp_n, tmp_list_size, tmp_list, H)
 
   implicit none
+  
+  BEGIN_DOC
+  ! Compute diagonal hessian for the Pipek-Mezey localization
+  END_DOC
 
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: H(tmp_n, tmp_n)
   double precision, allocatable :: beta(:,:),tmp_int(:,:),CS(:,:),tmp_mo_coef(:,:),tmp_mo_coef2(:,:),tmp_accu(:,:),tmp_CS(:,:)
-  integer :: i,j,tmp_k,tmp_i, tmp_j, a,b,rho,mu
-  double precision :: max_elem, t1,t2,t3
+  integer                       :: i,j,tmp_k,tmp_i, tmp_j, a,b,rho,mu
+  double precision              :: max_elem, t1,t2,t3
     
   print*,''
   print*,'---hessian_PM---'
@@ -1928,10 +1909,14 @@ end
 subroutine compute_crit_pipek(criterion)
 
   implicit none
+  
+  BEGIN_DOC
+  ! Compute the Pipek-Mezey localization criterion
+  END_DOC
 
   double precision, intent(out) :: criterion
   double precision, allocatable :: tmp_int(:,:)
-  integer :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho 
+  integer                       :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho 
 
   ! Allocation
   allocate(tmp_int(mo_num, mo_num))
@@ -1981,11 +1966,15 @@ with
 subroutine criterion_PM(tmp_list_size,tmp_list,criterion)
 
   implicit none
+  
+  BEGIN_DOC
+  ! Compute the Pipek-Mezey localization criterion
+  END_DOC
 
-  integer, intent(in) :: tmp_list_size, tmp_list(tmp_list_size)
+  integer, intent(in)           :: tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: criterion
   double precision, allocatable :: tmp_int(:,:),CS(:,:)
-  integer :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho
+  integer                       :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho
   
   print*,''
   print*,'---criterion_PM---'
@@ -2035,12 +2024,16 @@ end
 subroutine criterion_PM_v3(tmp_list_size,tmp_list,criterion)
 
   implicit none
-
-  integer, intent(in) :: tmp_list_size, tmp_list(tmp_list_size)
+  
+  BEGIN_DOC
+  ! Compute the Pipek-Mezey localization criterion
+  END_DOC
+  
+  integer, intent(in)           :: tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: criterion
   double precision, allocatable :: tmp_int(:,:), CS(:,:), tmp_mo_coef(:,:), tmp_mo_coef2(:,:),tmp_accu(:,:),tmp_CS(:,:)
-  integer :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho,nu,c
-  double precision :: t1,t2,t3
+  integer                       :: i,j,k,tmp_i,tmp_j,tmp_k, a, b, mu ,rho,nu,c
+  double precision              :: t1,t2,t3
 
   print*,''
   print*,'---criterion_PM_v3---'
@@ -2161,8 +2154,12 @@ subroutine criterion_FB_old(criterion)
 
   implicit none
 
+  BEGIN_DOC
+  ! Compute the Foster-Boys localization criterion
+  END_DOC
+
   double precision, intent(out) :: criterion
-  integer :: i
+  integer                       :: i
 
   ! Criterion (= \sum_i <i|r|i>^2 )
   criterion = 0d0
@@ -2180,9 +2177,13 @@ subroutine criterion_FB(tmp_list_size, tmp_list, criterion)
 
   implicit none
 
-  integer, intent(in) :: tmp_list_size, tmp_list(tmp_list_size)
+  BEGIN_DOC
+  ! Compute the Foster-Boys localization criterion
+  END_DOC
+
+  integer, intent(in)           :: tmp_list_size, tmp_list(tmp_list_size)
   double precision, intent(out) :: criterion
-  integer :: i, tmp_i
+  integer                       :: i, tmp_i
 
   ! Criterion (= - \sum_i <i|r|i>^2 )
   criterion = 0d0
@@ -2194,6 +2195,274 @@ subroutine criterion_FB(tmp_list_size, tmp_list, criterion)
 
 end subroutine
 #+END_SRC
+
+** Theta
+
+In:
+| n | integer | number of MOs in the considered MO class |
+| l | integer | list of MOs of the considered class      |
+
+Out:
+| m_x(n,n) | double precision | Matrix containing the rotation angle between all the different |
+|          |                  | pairs of MOs to apply the rotations (need a minus sign)        |
+| max_elem | double precision | Maximal angle in absolute value                                |
+
+$$\cos(4 \theta) = \frac{-A{ij}}{\sqrt{(A_{ij}^2 + B_{ij}^2)} $$
+$$\sin(4 \theta) = \frac{B{ij}}{\sqrt{(A_{ij}^2 + B_{ij}^2)} $$
+$$\tan(4 \theta) = \frac{\sin(4 \theta)}{\cos(4 \theta)}$$
+where $\theta$ is in fact $\theta_{ij}$
+
+For Foster-Boys localization:
+$$A_{ij} = <i|r|j>^2 - \frac{1}{4} (<i|r|i> - <j|r|j>)^2$$
+$$B_{ij} = <i|r|j> (<i|r|i> - <j|r|j>)$$
+
+
+For Pipek-Mezey localization:
+$$A_{ij} = \sum_A <i|P_A|j>^2 - \frac{1}{4} (<i|P_A|i> - <j|P_A|j>)^2$$
+$$B_{ij} = \sum_A <i|P_A|j> (<i|P_A|i> - <j|P_A|j>)$$
+with
+$$<i|P_A|j> = \frac{1}{2} \sum_\rho \sum_{\mu \in A} ( c_\rho^{i*} S_{\rho
+\mu} c_\mu^j + c_\mu^{i*} S_{\mu \rho} c_\rho^j)$$
+$i,j$ MOs
+$\mu, \rho$ AOs
+$A$ nucleus
+$S$ overlap matrix
+$c$ MO coefficient
+$r$ position operator
+
+#+begin_src f90 :tangle localization_sub.irp.f
+subroutine theta_FB(l, n, m_x, max_elem)
+
+  include 'pi.h'
+
+  BEGIN_DOC
+  ! Compute the angles to minimize the Foster-Boys criterion by using pairwise rotations of the MOs
+  ! Warning: you must give - the angles to build the rotation matrix...
+  END_DOC
+
+  implicit none
+
+  integer, intent(in)           :: n, l(n)
+  double precision, intent(out) :: m_x(n,n), max_elem
+
+  integer                       :: i,j, tmp_i, tmp_j
+  double precision, allocatable :: cos4theta(:,:), sin4theta(:,:)
+  double precision, allocatable :: A(:,:), B(:,:), beta(:,:), gamma(:,:)
+  integer                       :: idx_i,idx_j
+
+  allocate(cos4theta(n, n), sin4theta(n, n))
+  allocate(A(n,n), B(n,n), beta(n,n), gamma(n,n))
+
+  do tmp_j = 1, n
+    j = l(tmp_j)
+    do tmp_i = 1, n
+      i = l(tmp_i)
+      A(tmp_i,tmp_j) = mo_dipole_x(i,j)**2 - 0.25d0 * (mo_dipole_x(i,i) - mo_dipole_x(j,j))**2 &
+                     + mo_dipole_y(i,j)**2 - 0.25d0 * (mo_dipole_y(i,i) - mo_dipole_y(j,j))**2 &
+                     + mo_dipole_z(i,j)**2 - 0.25d0 * (mo_dipole_z(i,i) - mo_dipole_z(j,j))**2
+    enddo
+    A(j,j) = 0d0
+  enddo
+
+  do tmp_j = 1, n
+    j = l(tmp_j)
+    do tmp_i = 1, n
+      i = l(tmp_i)
+      B(tmp_i,tmp_j) = mo_dipole_x(i,j) * (mo_dipole_x(i,i) - mo_dipole_x(j,j)) &
+                     + mo_dipole_y(i,j) * (mo_dipole_y(i,i) - mo_dipole_y(j,j)) &
+                     + mo_dipole_z(i,j) * (mo_dipole_z(i,i) - mo_dipole_z(j,j))
+    enddo
+  enddo
+
+  !do tmp_j = 1, n
+  !  j = l(tmp_j)
+  !  do tmp_i = 1, n
+  !    i = l(tmp_i)
+  !    beta(tmp_i,tmp_j) =  (mo_dipole_x(i,i) - mo_dipole_x(j,j)) - 4d0 * mo_dipole_x(i,j)**2 &
+  !               + (mo_dipole_y(i,i) - mo_dipole_y(j,j)) - 4d0 * mo_dipole_y(i,j)**2 &
+  !               + (mo_dipole_z(i,i) - mo_dipole_z(j,j)) - 4d0 * mo_dipole_z(i,j)**2
+  !  enddo
+  !enddo
+
+  !do tmp_j = 1, n
+  !  j = l(tmp_j)
+  !  do tmp_i = 1, n
+  !    i = l(tmp_i)
+  !    gamma(tmp_i,tmp_j) = 4d0 * ( mo_dipole_x(i,j) * (mo_dipole_x(i,i) - mo_dipole_x(j,j)) &
+  !                       + mo_dipole_y(i,j) * (mo_dipole_y(i,i) - mo_dipole_y(j,j)) &
+  !                       + mo_dipole_z(i,j) * (mo_dipole_z(i,i) - mo_dipole_z(j,j)))
+  !  enddo
+  !enddo
+
+  !
+  !do j = 1, n
+  !  do i = 1, n
+  !    cos4theta(i,j) = - A(i,j) / dsqrt(A(i,j)**2 + B(i,j)**2)
+  !  enddo
+  !enddo
+
+  !do j = 1, n
+  !  do i = 1, n
+  !    sin4theta(i,j) = B(i,j) / dsqrt(A(i,j)**2 + B(i,j)**2)
+  !  enddo
+  !enddo
+
+  ! Theta
+  do j = 1, n
+    do i = 1, n
+      m_x(i,j) = 0.25d0 * atan2(B(i,j), -A(i,j))
+      !m_x(i,j) = 0.25d0 * atan2(sin4theta(i,j), cos4theta(i,j))
+    enddo
+  enddo
+
+  ! Enforce a perfect antisymmetry
+  do j = 1, n-1
+    do i = j+1, n
+      m_x(j,i) = - m_x(i,j)
+    enddo
+  enddo
+  do i = 1, n
+    m_x(i,i) = 0d0
+  enddo
+
+  ! Max
+  max_elem = 0d0
+  do j = 1, n-1
+    do i = j+1, n
+      if (dabs(m_x(i,j)) > dabs(max_elem)) then
+        max_elem = m_x(i,j)
+        !idx_i = i
+        !idx_j = j
+      endif
+    enddo
+  enddo
+
+  ! Debug
+  !print*,''
+  !print*,'sin/B'
+  !do i = 1, n
+  !  write(*,'(100F10.4)') sin4theta(i,:)
+  !  !B(i,:)
+  !enddo
+  !print*,'cos/A'
+  !do i = 1, n
+  !  write(*,'(100F10.4)') cos4theta(i,:)
+  !  !A(i,:)
+  !enddo
+  !print*,'X'
+  !!m_x = 0d0
+  !!m_x(idx_i,idx_j) = max_elem
+  !!m_x(idx_j,idx_i) = -max_elem
+  !do i = 1, n
+  !  write(*,'(100F10.4)') m_x(i,:)
+  !enddo
+  !print*,idx_i,idx_j,max_elem
+
+  max_elem = dabs(max_elem)
+  
+  deallocate(cos4theta, sin4theta)
+  deallocate(A,B,beta,gamma)
+  
+end
+#+end_src
+
+#+begin_src f90 :comments org :tangle localization_sub.irp.f
+subroutine theta_PM(l, n, m_x, max_elem)
+  
+  include 'pi.h'
+
+  BEGIN_DOC
+  ! Compute the angles to minimize the Foster-Boys criterion by using pairwise rotations of the MOs
+  ! Warning: you must give - the angles to build the rotation matrix...
+  END_DOC
+
+  implicit none
+
+  integer, intent(in)           :: n, l(n)
+  double precision, intent(out) :: m_x(n,n), max_elem
+
+  integer                       :: a,b,i,j,tmp_i,tmp_j,rho,mu,nu,idx_i,idx_j
+  double precision, allocatable :: Aij(:,:), Bij(:,:), Pa(:,:)
+
+  allocate(Aij(n,n), Bij(n,n), Pa(n,n))
+
+  do a = 1, nucl_num ! loop over the nuclei
+    Pa = 0d0 ! Initialization for each nuclei
+
+    ! Loop over the MOs of the a given mo_class to compute <i|P_a|j>
+    do tmp_j = 1, n
+      j = l(tmp_j) 
+      do tmp_i = 1, n
+         i = l(tmp_i)
+        do rho = 1, ao_num ! loop over all the AOs
+          do b = 1, nucl_n_aos(a) ! loop over the number of AOs which belongs to the nuclei a
+            mu = nucl_aos(a,b) ! AO centered on atom a 
+
+            Pa(tmp_i,tmp_j) = Pa(tmp_i,tmp_j) + 0.5d0 * (mo_coef(rho,i) * ao_overlap(rho,mu) * mo_coef(mu,j) &
+                                   + mo_coef(mu,i) * ao_overlap(mu,rho) * mo_coef(rho,j))
+
+          enddo
+        enddo  
+      enddo
+    enddo
+
+    ! A
+    do j = 1, n
+      do i = 1, n
+        Aij(i,j) = Aij(i,j) + Pa(i,j)**2 - 0.25d0 * (Pa(i,i) - Pa(j,j))**2
+      enddo
+    enddo
+    
+    ! B
+    do j = 1, n
+      do i = 1, n
+        Bij(i,j) = Bij(i,j) + Pa(i,j) * (Pa(i,i) - Pa(j,j))
+      enddo
+    enddo
+
+  enddo
+
+  ! Theta
+  do j = 1, n
+    do i = 1, n
+      m_x(i,j) = 0.25d0 * atan2(Bij(i,j), -Aij(i,j))
+    enddo
+  enddo
+
+  ! Enforce a perfect antisymmetry
+  do j = 1, n-1
+    do i = j+1, n
+      m_x(j,i) = - m_x(i,j)
+    enddo
+  enddo
+  do i = 1, n
+    m_x(i,i) = 0d0
+  enddo
+
+  ! Max
+  max_elem = 0d0
+  do j = 1, n-1
+    do i = j+1, n
+      if (dabs(m_x(i,j)) > dabs(max_elem)) then
+        max_elem = m_x(i,j)
+        idx_i = i
+        idx_j = j
+      endif
+    enddo
+  enddo
+
+  ! Debug
+  !do i = 1, n
+  !  write(*,'(100F10.4)') m_x(i,:)
+  !enddo
+  !print*,'Max',idx_i,idx_j,max_elem
+
+  max_elem = dabs(max_elem)
+
+  deallocate(Aij,Bij,Pa)
+
+end
+#+end_src
 
 ** Spatial extent
 
@@ -2208,11 +2477,15 @@ From that we can also compute the average and the standard deviation
 subroutine compute_spatial_extent(spatial_extent)
 
   implicit none
+
+  BEGIN_DOC
+  ! Compute the spatial extent of the MOs
+  END_DOC
  
   double precision, intent(out) :: spatial_extent(mo_num)
-  double precision :: average_core, average_act, average_inact, average_virt
-  double precision :: std_var_core, std_var_act, std_var_inact, std_var_virt
-  integer :: i,j,k,l
+  double precision              :: average_core, average_act, average_inact, average_virt
+  double precision              :: std_var_core, std_var_act, std_var_inact, std_var_virt
+  integer                       :: i,j,k,l
 
   spatial_extent = 0d0
   
@@ -2306,6 +2579,10 @@ end
 subroutine compute_average_sp_ext(spatial_extent, list, list_size, average)
 
   implicit none
+  
+  BEGIN_DOC
+  ! Compute the average spatial extent of the MOs
+  END_DOC
 
   integer, intent(in) :: list_size, list(list_size)
   double precision, intent(in) :: spatial_extent(mo_num)
@@ -2328,11 +2605,15 @@ subroutine compute_std_var_sp_ext(spatial_extent, list, list_size, average, std_
 
   implicit none
 
-  integer, intent(in) :: list_size, list(list_size)
-  double precision, intent(in) :: spatial_extent(mo_num)
-  double precision, intent(in) :: average
+  BEGIN_DOC
+  ! Compute the standard deviation of the spatial extent of the MOs
+  END_DOC
+
+  integer, intent(in)           :: list_size, list(list_size)
+  double precision, intent(in)  :: spatial_extent(mo_num)
+  double precision, intent(in)  :: average
   double precision, intent(out) :: std_var
-  integer :: i, tmp_i
+  integer                       :: i, tmp_i
 
   std_var = 0d0
 
@@ -2346,221 +2627,6 @@ subroutine compute_std_var_sp_ext(spatial_extent, list, list_size, average, std_
 end
 #+END_SRC
 
-** Pairwise
-#+BEGIN_SRC f90 :comments org :tangle localization_sub.irp.f
-! Doesn't work during the last try but was working at one moment, idk
-subroutine compute_theta_FB(m_theta)
-
-  include 'constants.h'
-
-  implicit none
-  
-  integer :: i,j
-  double precision, intent(out) :: m_theta(mo_num, mo_num)
-
-  double precision, allocatable :: A12(:,:), B12(:,:)
-
-  allocate(A12(mo_num, mo_num), B12(mo_num, mo_num))
-  
-  !A12
-  do j = 1, mo_num
-    do i = 1, mo_num
-      A12(i,j) = mo_dipole_x(i,j) * mo_dipole_x(i,j) &
-                 - 0.25d0 * (mo_dipole_x(i,i) - mo_dipole_x(j,j)) * &
-                 (mo_dipole_x(i,i) - mo_dipole_x(j,j)) &
-                + &
-                mo_dipole_y(i,j) * mo_dipole_y(i,j) &
-                 - 0.25d0 * (mo_dipole_y(i,i) - mo_dipole_y(j,j)) * &
-                 (mo_dipole_y(i,i) - mo_dipole_y(j,j)) &
-                + &
-                mo_dipole_z(i,j) * mo_dipole_z(i,j) &
-                 - 0.25d0 * (mo_dipole_z(i,i) - mo_dipole_z(j,j)) * &
-                 (mo_dipole_z(i,i) - mo_dipole_z(j,j))
-    enddo
-  enddo
-
-  ! B12
-  do j = 1, mo_num
-    do i = 1, mo_num
-      B12(i,j) = (mo_dipole_x(i,i) - mo_dipole_x(j,j)) * mo_dipole_x(i,j) &
-                 + &
-                 (mo_dipole_y(i,i) - mo_dipole_y(j,j)) * mo_dipole_y(i,j) &
-                 + &
-                 (mo_dipole_z(i,i) - mo_dipole_z(j,j)) * mo_dipole_z(i,j)
-    enddo
-  enddo
-
-  ! m_theta
-  do j = 1, mo_num
-    do i = 1, mo_num
-      if (i == j) then
-        m_theta(i,j) = 0d0     !(-B12(i,j), A12(i,j)) ?? pourquoi j'avais mis le - ici ????
-      elseif (0.25d0 * atan2(B12(i,j), -A12(i,j)) >= 0d0) then
-        m_theta(i,j) =  0d0 * pi * 0.25d0 + 0.25d0 * atan2(B12(i,j), -A12(i,j))
-      else
-        m_theta(i,j) = - 0d0 *pi * 0.25d0 + 0.25d0 * atan2(B12(i,j), -A12(i,j))
-      endif
-    enddo
-  enddo
-
-  deallocate(A12,B12)
-
-end subroutine
-
-subroutine compute_theta_PM(list_size,list,m_theta)
-
-  implicit none
-
-  integer, intent(in) :: list_size, list(list_size)
-  double precision, intent(out) :: m_theta(mo_num,mo_num) 
-  integer :: i,j, a, b, rho, mu,tmp_i,tmp_j
-  double precision, allocatable :: A12(:,:), B12(:,:), tmp_int(:,:)
-  double precision :: atan2
-
-  allocate(A12(mo_num,mo_num),B12(mo_num,mo_num), tmp_int(mo_num,mo_num))
-  A12 = 0d0
-  B12 = 0d0
-  do a = 1, nucl_num ! loop over the nuclei
-    tmp_int = 0d0
-
-    do tmp_j = 1, list_size
-      j = list(tmp_j)
-      do tmp_i = 1, list_size
-        i = list(tmp_i)
-        do rho = 1, ao_num ! loop over all the AOs
-          do b = 1, nucl_n_aos(a) ! loop over the number of AOs which belongs to the nuclei a
-            mu = nucl_aos(a,b)
-
-            tmp_int(i,j) = tmp_int(i,j) + 0.5d0 * (mo_coef(rho,i) * ao_overlap(rho,mu) * mo_coef(mu,j) &
-                                   + mo_coef(mu,i) * ao_overlap(mu,rho) * mo_coef(rho,j))
-
-          enddo
-        enddo  
-      enddo
-    enddo
-
-   do j = 1, mo_num
-      do i = 1, mo_num
-
-        A12(i,j) = A12(i,j) + tmp_int(i,j)**2 - 0.25d0 *(tmp_int(i,i) - tmp_int(j,j))**2
-
-      enddo
-    enddo
-
-    do j = 1, mo_num
-      do i = 1, mo_num
-
-        B12(i,j) = B12(i,j) + tmp_int(i,j) * (tmp_int(i,i) - tmp_int(j,j))
-
-      enddo
-    enddo
-
-  enddo
-
-  ! m_theta
-  do tmp_j = 1, list_size
-    j = list(tmp_j)
-    do tmp_i = 1, list_size
-      i = list(tmp_i)
-      if (i == j) then
-        m_theta(i,j) = 0d0 
-      else
-        m_theta(i,j) = 0.25d0 * atan2(B12(i,j), -A12(i,j))
-      endif
-    enddo
-  enddo
-
-  do i = 1, mo_num
-    write(*,'(10E12.5)') m_theta(i,:)
-  enddo
-
-  deallocate(A12,B12)
-  
-end
-
-subroutine research_max_theta(mo_beg, mo_end, m_theta, i_theta_max, j_theta_max, theta_max)
-
-  implicit none
-
-  integer, intent(in) :: mo_beg, mo_end
-  double precision, intent(in) :: m_theta(mo_num, mo_num)
-  integer, intent(out) :: i_theta_max, j_theta_max
-  double precision, intent(out) :: theta_max
-  integer :: i,j
-  
-  ! research the max theta for the MOs between mo_beg and mo_end
-
-  theta_max = 0d0
-  do j = mo_beg, mo_end
-    do i = mo_beg, mo_end
-      if (ABS(theta_max) <= ABS(m_theta(i,j))) then
-        i_theta_max = i 
-        j_theta_max = j 
-        theta_max =  m_theta(i,j)
-      endif
-    enddo
-  enddo
-
-end subroutine
-
-subroutine apply_pairwise_rotation(i_theta_max, j_theta_max, theta_max)
-
-  implicit none
-
-  integer, intent(in) :: i_theta_max, j_theta_max
-  double precision, intent(in) :: theta_max
-  double precision, allocatable :: new_mos(:,:)
-  integer :: k
-
-  allocate(new_mos(ao_num, mo_num))
-
-  ! Rotation
-  new_mos = mo_coef
-
-  do k = 1, ao_num
-    new_mos(k, i_theta_max) = mo_coef(k, i_theta_max) * cos(theta_max) &
-                            + mo_coef(k, j_theta_max) * sin(theta_max)
-    new_mos(k, j_theta_max) = - mo_coef(k, i_theta_max) * sin(theta_max) &
-                            + mo_coef(k, j_theta_max) * cos(theta_max)
-  enddo
-
-  mo_coef = new_mos
-  call save_mos()
-  
-end subroutine
-
-! It works but it needs the four index integrals... => bad
-!subroutine compute_hf_energy()
-!
-!  implicit none
-!
-!  double precision :: energy, mo_two_e_integral
-!  integer :: i,j,k,l
-!
-!  energy = 0d0
-!  do j = 1, mo_num
-!    do i = 1, mo_num
-!      energy = energy + mo_one_e_integrals(i,j) * one_e_dm_mo(i,j)
-!    enddo
-!  enddo
-!
-!  do l = 1, mo_num
-!    do k = 1, mo_num
-!      do j = 1, mo_num
-!        do i = 1, mo_num
-!          energy = energy +0.5d0 * mo_two_e_integral(i,j,k,l) * two_e_dm_mo(i,j,k,l)
-!        enddo
-!      enddo
-!    enddo
-!  enddo
-!
-!  energy = energy + nuclear_repulsion
-!
-!  print*,'energy scf', energy
-!
-!end subroutine
-#+END_SRC
-
 ** Utils
 
 #+BEGIN_SRC f90 :comments org :tangle localization_sub.irp.f
@@ -2568,11 +2634,15 @@ subroutine apply_pre_rotation()
 
   implicit none
 
+  BEGIN_DOC
+  ! Apply a rotation between the MOs
+  END_DOC
+
   double precision, allocatable :: pre_rot(:,:), prev_mos(:,:), R(:,:)
-  double precision :: t1,t2,t3
-  integer :: i,j,tmp_i,tmp_j
-  integer :: info
-  logical :: enforce_step_cancellation
+  double precision              :: t1,t2,t3
+  integer                       :: i,j,tmp_i,tmp_j
+  integer                       :: info
+  logical                       :: enforce_step_cancellation
 
   print*,'---apply_pre_rotation---'
   call wall_time(t1)
@@ -2685,13 +2755,13 @@ subroutine x_tmp_orb_loc_v2(tmp_n, tmp_list_size, tmp_list, v_grad, H,tmp_x, tmp
 
   implicit none
 
-  integer, intent(in) :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
-  double precision, intent(in) :: v_grad(tmp_n)
-  double precision, intent(in) :: H(tmp_n, tmp_n)
+  integer, intent(in)           :: tmp_n, tmp_list_size, tmp_list(tmp_list_size)
+  double precision, intent(in)  :: v_grad(tmp_n)
+  double precision, intent(in)  :: H(tmp_n, tmp_n)
   double precision, intent(out) :: tmp_m_x(tmp_list_size, tmp_list_size), tmp_x(tmp_list_size)
   !double precision, allocatable :: x(:)
-  double precision :: lambda , accu, max_elem
-  integer :: i,j,tmp_i,tmp_j,tmp_k
+  double precision              :: lambda , accu, max_elem
+  integer                       :: i,j,tmp_i,tmp_j,tmp_k
 
   ! Allocation
   !allocate(x(tmp_n))
@@ -2728,7 +2798,7 @@ subroutine x_tmp_orb_loc_v2(tmp_n, tmp_list_size, tmp_list, v_grad, H,tmp_x, tmp
     enddo
   enddo
 
-  ! Antisym, pourrait être mieux avec m_x - m_x^T ?
+  ! Antisym
   do tmp_i = 1, tmp_list_size - 1
     do tmp_j = tmp_i + 1, tmp_list_size
       tmp_m_x(tmp_i,tmp_j) = - tmp_m_x(tmp_j,tmp_i) 
@@ -2773,12 +2843,13 @@ end
 
 #+BEGIN_SRC f90 :comments org :tangle localization_sub.irp.f
 subroutine run_sort_by_fock_energies()
-  BEGIN_DOC
-  ! Program that saves the current |MOs| ordered by diagonal element of the Fock operator.
-  !
-  ! Warning : the Fock operator, and therefore its matrix elements, depends on the occupancy.
-  END_DOC
+  
   implicit none
+  
+  BEGIN_DOC
+  ! Saves the current MOs ordered by diagonal element of the Fock operator.
+  END_DOC
+  
   integer                        :: i,j,k,l,tmp_i,tmp_k,tmp_list_size
   integer, allocatable           :: iorder(:)
   double precision, allocatable  :: fock_energies_tmp(:), tmp_mo_coef(:,:), tmp_list(:)

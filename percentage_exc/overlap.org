@@ -1,0 +1,440 @@
+* Overlap
+** Safe
+#+begin_src f90 :comments org :tangle overlap.irp.f
+subroutine overlap_wf_safe(Ndet, list_det, list_coef)
+
+  implicit none
+
+  integer, intent(in)           :: Ndet
+  integer(bit_kind), intent(in) :: list_det(N_int,2,Ndet)
+  double precision, intent(in)  :: list_coef(Ndet)
+
+  double precision              :: accu, overlap
+  integer                       :: i,j,s,degree
+
+  ! TODO: add filter in psi_det on the excitation degree / cc_ref
+
+  !$omp parallel &
+  !$omp private(s,i,j,degree,accu) &
+  !$omp shared(N_states,psi_det,list_det,N_int,psi_coef,list_coef, &
+  !$omp overlap,Ndet) &
+  !$omp default(none)
+  do s = 1, N_states
+    accu = 0d0
+    overlap = 0d0
+    !$omp do
+    do i = 1, size(psi_coef,1)
+      do j = 1, Ndet
+       call get_excitation_degree(psi_det(1,1,i),list_det(1,1,j),degree,N_int)
+       if (degree == 0) then
+         accu = accu + psi_coef(i,s) * list_coef(j)
+       endif
+      enddo
+    enddo
+    !$omp end do
+    !$omp critical
+    overlap = overlap + accu
+    !$omp end critical
+    !$omp barrier
+    !$omp single
+    write(*,'(A19,I2,A3,F12.6)') 'Overlap with state ', s,' = ', dabs(overlap)
+    !$omp end single
+    !$omp barrier
+  enddo
+  !$omp end parallel
+
+end
+#+end_src
+
+** Less safe
+#+begin_src f90 :comments org :tangle overlap.irp.f
+subroutine overlap_wf(Ndet, list_det, list_coef)
+
+  use omp_lib
+  
+  implicit none
+
+  integer, intent(in)            :: Ndet
+  integer(bit_kind), intent(in)  :: list_det(N_int,2,Ndet)
+  double precision, intent(in)   :: list_coef(Ndet)
+
+  double precision               :: accu, overlap
+  integer                        :: n_threads, num
+  integer                        :: i,j,s,degree, count, tot_count, max_exc
+  integer, allocatable           :: idx(:),idx_start(:)
+  integer(bit_kind), allocatable :: f_psi_det(:,:,:), tmp_psi_det(:,:,:,:)
+  double precision, allocatable  :: f_psi_coef(:,:), tmp_psi_coef(:,:)
+
+  PROVIDE psi_det psi_coef
+
+  !$omp parallel &
+  !$omp shared(n_threads)
+  n_threads = omp_get_num_threads()
+  !$omp end parallel
+  
+  allocate(idx(0:n_threads-1),idx_start(0:n_threads-1))
+  
+  ! TODO: add filter in psi_det on the excitation degree / cc_ref
+  ! Filter
+  if (extract_c4) then
+     max_exc = 4
+  else if (extract_c3) then
+     max_exc = 3
+  else
+    max_exc = 2
+  endif
+  
+  count = 0
+  tot_count = 0
+  !$omp parallel &
+  !$omp private(i,degree) &
+  !$omp shared(tot_count,count,psi_det,N_int,max_exc,cc_ref) &
+  !$omp default(none)
+  !$omp do
+  do i = 1, size(psi_det,3)
+    call get_excitation_degree(psi_det(1,1,i),psi_det(1,1,cc_ref),degree,N_int)
+    if (degree <= max_exc) then
+       count = count + 1
+    endif
+  enddo
+  !$omp end do
+  !$omp critical
+  tot_count = tot_count + count
+  !$omp end critical
+  !$omp end parallel
+
+  allocate(f_psi_det(N_int,2,tot_count),f_psi_coef(tot_count,N_states))
+
+  ! Allocate buffers
+  allocate(tmp_psi_det(N_int,2,tot_count/n_threads*4,0:n_threads-1))
+  allocate(tmp_psi_coef(tot_count/n_threads*4,0:n_threads-1))
+  !$omp parallel &
+  !$omp private(s,i,degree,num) &
+  !$omp shared(idx,idx_start,n_threads,count,tmp_psi_det,tmp_psi_coef, &
+  !$omp f_psi_coef,psi_det,psi_coef,N_int,max_exc,N_states, &
+  !$omp cc_ref,f_psi_det) &
+  !$omp default(none)
+  num = omp_get_thread_num()
+  idx(num) = 1
+
+  ! Fill the buffer
+  !$omp do
+  do i = 1, size(psi_det,3)
+    call get_excitation_degree(psi_det(1,1,i),psi_det(1,1,cc_ref),degree,N_int)
+    if (degree <= max_exc) then
+       tmp_psi_det(:,:,idx(num),num) = psi_det(:,:,i)
+       idx(num) = idx(num) + 1
+    endif
+  enddo
+  !$omp end do
+  idx(num) = idx(num) - 1
+
+  ! Compute the indexes
+  !$omp master
+  idx_start(0) = 0
+  do i = 1, n_threads-1
+    idx_start(i) = idx_start(i-1) + idx(i-1)
+  enddo
+  !print*,idx
+  !$omp end master
+  !$omp barrier
+
+  ! Fill the final array
+  !$omp do
+  do j = 0, n_threads-1
+    do i = 1, idx(j)
+      f_psi_det(:,:,idx_start(j)+i) = tmp_psi_det(:,:,i,j)
+    enddo
+  enddo
+  !$omp end do
+
+  do s = 1, N_states
+    ! Fill the buffer
+    idx(num) = 1
+    !$omp do
+    do i = 1, size(psi_det,3)
+      call get_excitation_degree(psi_det(1,1,i),psi_det(1,1,cc_ref),degree,N_int)
+      if (degree <= max_exc) then
+         tmp_psi_coef(idx(num),num) = psi_coef(i,s)
+         idx(num) = idx(num) + 1
+      endif
+    enddo
+    !$omp end do
+    idx(num) = idx(num) - 1
+
+    ! Compute the indexes
+    !$omp master
+    idx_start(0) = 0
+    do i = 1, n_threads-1
+      idx_start(i) = idx_start(i-1) + idx(i-1)
+    enddo
+    !$omp end master
+    !$omp barrier
+       
+    ! Fill the final array
+    !$omp do
+    do j = 0, n_threads-1
+      do i = 1, idx(j)
+        f_psi_coef(idx_start(j)+i,s) = tmp_psi_coef(i,j)
+      enddo
+    enddo
+    !$omp end do
+
+  enddo
+  !$omp end parallel
+
+  deallocate(tmp_psi_coef,tmp_psi_det)
+  
+  !$omp parallel &
+  !$omp private(s,i,j,degree,accu) &
+  !$omp shared(N_states,f_psi_det,list_det,N_int,f_psi_coef,list_coef, &
+  !$omp overlap,Ndet) &
+  !$omp default(none)
+  do s = 1, N_states
+    accu = 0d0
+    overlap = 0d0
+    !$omp do
+    do i = 1, size(f_psi_coef,1)
+      do j = 1, Ndet
+       call get_excitation_degree(f_psi_det(1,1,i),list_det(1,1,j),degree,N_int)
+       if (degree == 0) then
+         accu = accu + f_psi_coef(i,s) * list_coef(j)
+       endif
+      enddo
+    enddo
+    !$omp end do
+    !$omp critical
+    overlap = overlap + accu
+    !$omp end critical
+    !$omp barrier
+    !$omp single
+    write(*,'(A19,I2,A3,F12.6)') 'Overlap with state ', s,' = ', dabs(overlap)
+    !$omp end single
+    !$omp barrier
+  enddo
+  !$omp end parallel
+
+  deallocate(f_psi_det)
+  
+end
+#+end_src
+
+** Fast
+#+begin_src f90 :comments org :tangle overlap.irp.f
+subroutine overlap_fast(psi_det1,psi_coef1,Nstates1,ndet1,psi_det2,psi_coef2,Nstates2,ndet2)
+
+  implicit none
+
+  integer, intent(in) :: ndet1,ndet2,Nstates1,Nstates2
+  integer(bit_kind), intent(in) :: psi_det1(N_int,2,ndet1),psi_det2(N_int,2,ndet2)
+  double precision, intent(in) :: psi_coef1(ndet1,Nstates1),psi_coef2(ndet2,Nstates2)
+
+  double precision, allocatable :: tmp_coef1(:,:), tmp_coef2(:,:), overlap(:,:)
+  integer(bit_kind), allocatable :: tmp_det1(:,:,:), tmp_det2(:,:,:)
+  integer :: i,j,k,l,s,s1,s2
+  integer, allocatable :: states2(:)
+  logical :: is_eq
+
+  allocate(tmp_coef1(Nstates1,ndet1),tmp_coef2(Nstates2,ndet2))
+  allocate(tmp_det1(N_int,2,ndet1),tmp_det2(N_int,2,ndet2))
+  allocate(overlap(Nstates1,Nstates2))
+  allocate(states2(Nstates2))
+
+  do i = 1, ndet1
+    tmp_det1(:,:,i) = psi_det1(:,:,i)
+  enddo
+  
+  do i = 1, ndet2
+    tmp_det2(:,:,i) = psi_det2(:,:,i)
+  enddo
+  
+  ! Reorder
+  do i = 1, ndet1
+    do s = 1, Nstates1
+      tmp_coef1(s,i) = psi_coef1(i,s)
+    enddo
+  enddo
+  
+  do i = 1, ndet2
+    do s = 1, Nstates2
+      tmp_coef2(s,i) = psi_coef2(i,s)
+    enddo
+  enddo
+
+  ! Sort
+  call recursive_sort_det(tmp_det1,tmp_coef1,Nstates1,ndet1,N_int*2,1)
+  call recursive_sort_det(tmp_det2,tmp_coef2,Nstates2,ndet2,N_int*2,1)
+
+  ! Overlap
+  overlap = 0d0
+  k = 0
+  do i = 1, ndet1
+    ! Search the same det
+    do j = k+1, ndet2
+      is_eq = .True.
+      do s = 1, 2
+        do l = 1, N_int
+          if (tmp_det1(l,s,i) /= tmp_det2(l,s,j)) then
+            is_eq = .False.
+          endif
+        enddo
+      enddo
+      if (is_eq) then
+        k = j
+        exit
+      ! If the first integer of the det2 is larger than the first integer of det1
+      ! there is no det1 = det2
+      else if (tmp_det2(1,1,j) > tmp_det1(1,1,i)) then
+        exit
+      endif
+    enddo
+    
+    if (.not. is_eq) cycle
+    
+    ! Sum
+    do s2 = 1, Nstates2
+      do s1 = 1, Nstates1
+        overlap(s1,s2) = overlap(s1,s2) + tmp_coef1(s1,i) * tmp_coef2(s2,k)
+      enddo
+    enddo
+  enddo
+
+  ! Print
+  do s = 1, Nstates2
+    states2(s) = s
+  enddo
+  print*,''
+  print*, 'Overlap:'
+  write(*,'(A6,100(I12))') ' s1\s2', states2(:)
+  do s1 = 1, Nstates1
+    write(*,'(I9,100(F12.6))') s1, dabs(overlap(s1,:))
+  enddo
+
+end
+#+end_src
+
+*** Recursive sort
+#+begin_src f90 :comments org :tangle overlap.irp.f
+recursive subroutine recursive_sort_det(psidet,psicoef_T,Nstates,ndet,n_idx,idx)
+
+  implicit none
+
+  BEGIN_DOC
+  ! Recursive sort of the wf to sort the integers composing the determinants
+  END_DOC
+
+  integer, intent(in) :: ndet,Nstates,n_idx,idx
+  integer(bit_kind), intent(inout) :: psidet(N_int*2,ndet)
+  double precision, intent(inout) :: psicoef_T(Nstates,ndet)
+
+  integer :: i,j,s,nb_u
+  integer, allocatable :: pu(:),nu(:)
+
+  if (ndet == 0) return
+
+  if (idx < n_idx) then
+
+    ! Sort
+    call sort_det_idx(psidet,psicoef_T,ndet,Nstates,n_idx,idx)
+
+    allocate(pu(ndet),nu(ndet))
+    ! Unique, nb and position
+    call search_unique_det_idx(psidet,ndet,n_idx,idx,nb_u,nu,pu)
+
+    do i = 1, nb_u
+      call recursive_sort_det(psidet(1,pu(i)),psicoef_T(1,pu(i)),Nstates,nu(i),n_idx,idx+1)
+    enddo
+    deallocate(pu,nu)
+
+  else
+
+    ! Sort
+    call sort_det_idx(psidet,psicoef_T,ndet,Nstates,n_idx,idx)
+
+  endif
+  
+end
+#+end_src
+
+*** Sort det idx
+#+begin_src f90 :comments org :tangle overlap.irp.f
+subroutine sort_det_idx(psidet,psicoef_T,ndet,Nstates,n_idx,idx)
+
+  implicit none
+
+  BEGIN_DOC
+  ! Sort psidet and psicoef_Twith respect to the idxth part of the determinants
+  ! psicoef_T: psicoef transposed...
+  END_DOC
+
+  integer, intent(in) :: ndet,Nstates,n_idx,idx
+  integer(bit_kind), intent(inout) :: psidet(N_int*2,ndet)
+  double precision, intent(inout) :: psicoef_T(Nstates,ndet)
+
+  integer :: i,j,s
+  integer(bit_kind), allocatable :: tmp(:), tmp_det(:,:)
+  double precision, allocatable :: tmp_coef(:,:)
+  integer, allocatable :: iorder(:)
+
+  allocate(tmp(ndet),tmp_det(N_int*2,ndet),tmp_coef(Nstates,ndet),iorder(ndet))
+
+  do i = 1, ndet
+    tmp(i) = psidet(idx,i)
+    tmp_det(:,i) = psidet(:,i)
+    tmp_coef(:,i) = psicoef_T(:,i)
+    iorder(i) = i
+  enddo
+
+  call i8sort(tmp,iorder,ndet)
+
+  do i = 1, ndet
+    psidet(:,i) = tmp_det(:,iorder(i))
+    psicoef_T(:,i) = tmp_coef(:,iorder(i))
+  enddo
+
+  deallocate(tmp,tmp_det,tmp_coef,iorder)
+
+end
+#+end_src
+
+*** Unique
+#+begin_src f90 :comments org :tangle overlap.irp.f
+subroutine search_unique_det_idx(psidet,ndet,n_idx,idx,nb_u,nu,pu)
+
+  implicit none
+
+  BEGIN_DOC
+  ! To search identical integers in the determinants
+  END_DOC
+
+  integer, intent(in) :: ndet,n_idx,idx
+  integer(bit_kind), intent(in) :: psidet(N_int*2,ndet)
+
+  integer, intent(out) :: nb_u, nu(ndet), pu(ndet)
+
+  integer :: i,j,k
+  integer(bit_kind) :: val
+
+  ! Unique, nb and position
+  k = 1
+  pu = 0 ! starting position
+  nu = 0 ! nb
+  pu(1) = 1
+  nu(1) = 1
+  val = psidet(idx,1) 
+  do i = 2, ndet
+    if (val /= psidet(idx,i)) then
+      k = k + 1
+      pu(k) = i
+      nu(k) = nu(k) + 1
+      val = psidet(idx,i)
+    else
+      nu(k) = nu(k) + 1
+    endif
+  enddo
+
+  nb_u = k
+
+end
+#+end_src
+

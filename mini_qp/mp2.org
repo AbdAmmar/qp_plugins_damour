@@ -1,0 +1,1274 @@
+* Prog
+#+begin_src f90 :comments org :tangle cipsi_mp2.irp.f
+program cipsi_mp2
+
+  implicit none
+
+  read_wf = .True.
+  call run_cipsi_mp2(ci_energy,psi_det,N_det,N_states_diag,N_states)
+  
+end
+#+end_src
+
+#+begin_src f90 :comments org :tangle mp2.irp.f
+program mp2
+
+  implicit none
+
+  read_wf = .True.
+  call run_mp2_v2()
+  
+end
+#+end_src
+
+* CIPSI MP2
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine run_cipsi_mp2(E0,psidet,Ndet,N_st_diag,N_st)
+
+  use bitmasks
+  implicit none
+
+  integer, intent(in)           :: N_st, N_st_diag, Ndet
+  double precision, intent(in)  :: E0(N_st)
+  integer(bit_kind), intent(in) :: psidet(N_int,2,Ndet)
+  integer                       :: i,j
+  double precision              :: E2, E2_v2, t0, t1
+  double precision, allocatable :: v_aaaa(:,:,:,:)
+  double precision, allocatable :: v_abab(:,:,:,:)
+  double precision, allocatable :: v_abba(:,:,:,:)
+  double precision, allocatable :: dressing(:), d_energies(:)
+  integer                       :: omp_get_max_active_levels
+  integer                       :: nb_levels
+
+  allocate(dressing(Ndet), d_energies(N_st_diag))
+
+  allocate(v_aaaa(mo_num,mo_num,mo_num,mo_num))
+  allocate(v_abab(mo_num,mo_num,mo_num,mo_num))
+  allocate(v_abba(mo_num,mo_num,mo_num,mo_num))
+  !double precision, allocatable :: H(:,:)
+
+  !allocate(H(N_det,N_det))
+  
+  !call run_mp2()
+  !call run_mp2_sp(psi_det(:,:,1),E2)
+
+  !call build_H(H)
+  !call diag_H(H,4)
+
+  !print*,'b',CI_energy_dressed
+  !do j = 1, N_states
+  !   do i = 1, N_det
+  !     dressing_column_h(i,j) = 1d0
+  !   enddo
+  !enddo
+  !print*,'a',CI_energy_dressed
+
+  print*,''
+  print*,'================='
+  print*,'Before H dressing'
+
+  !print*,'E     ', ci_energy(1:N_states)
+  !print*,'S^2   ', ci_s2(1:N_states)
+
+  call w_aaaa(v_aaaa)
+  call w_abab(v_abab)
+  call w_abba(v_abba)
+  
+  !!call wall_time(t0)
+  !!$OMP PARALLEL &
+  !!$OMP SHARED(psi_det,v_aaaa,v_abab,v_abba,dressing_column_h,N_det) &
+  !!$OMP PRIVATE(j,E2_v2,E2) &
+  !!$OMP DEFAULT(NONE) 
+  !!OMP DO
+  !!do j = 1, N_det
+  !!   call run_mp2_sp_v0(psi_det(:,:,j), E2)
+  !   !call run_mp2_sp_v1(psi_det(:,:,j), v_aaaa, v_abab, v_abba, E2_v2)
+  !   !if (dabs(E2-E2_v2) > 1d-12) then
+  !   !  call abort
+  !   !endif
+  !   !print*,E2
+  !!   dressing_column_h(j,1) = E2
+  !!enddo
+  !!OMP END DO
+  !!$OMP END PARALLEL
+  !!call wall_time(t1)
+  !!print*,'Time:',t1-t0
+
+  !TOUCH dressing_column_h
+  !print*,'# MP2 ',CI_energy_dressed(1:N_states) - CI_energy(1:N_states)
+  
+  call wall_time(t0)
+  nb_levels = omp_get_max_active_levels()
+  call omp_set_max_active_levels(1)
+  !$OMP PARALLEL &
+  !$OMP SHARED(psidet,v_aaaa,v_abab,v_abba,dressing,Ndet) &
+  !$OMP PRIVATE(j,E2_v2) &
+  !$OMP DEFAULT(NONE) 
+  !$OMP DO
+  do j = 1, Ndet
+     call run_mp2_sp_v1(psidet(:,:,j), v_aaaa, v_abab, v_abba, E2_v2)
+     !dressing_column_h(j,1) = E2_v2
+     dressing(j) = E2_v2
+  enddo
+  !$OMP END DO
+  !$OMP END PARALLEL
+  call omp_set_max_active_levels(nb_levels)
+  call wall_time(t1)
+  print*,'Time:',t1-t0
+  
+  print*,''
+  print*,'================='
+  print*,'After H dressing'
+
+  call dav_dressed(dressing,Ndet,d_energies,N_st_diag,N_st)
+
+  print*,'# MP2 ',d_energies(1:N_st) + nuclear_repulsion - E0(1:N_st)
+  !print*,'# MP2 ', ci_energy_dressed(1:N_states) - ci_energy(1:N_states)
+  !print*,'# S^2 ', ci_eigenvectors_s2_dressed(1:N_states)
+  
+  !call diag_H(H,4)
+
+  !deallocate(H)
+  deallocate(v_aaaa,v_abab,v_abba)
+  deallocate(dressing,d_energies)
+  
+end
+#+end_src
+
+* MP2
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine run_mp2_v2()
+
+  implicit none
+
+  double precision              :: E2
+  double precision, allocatable :: v_aaaa(:,:,:,:)
+  double precision, allocatable :: v_abab(:,:,:,:)
+  double precision, allocatable :: v_abba(:,:,:,:)
+  
+  allocate(v_aaaa(mo_num,mo_num,mo_num,mo_num))
+  allocate(v_abab(mo_num,mo_num,mo_num,mo_num))
+  allocate(v_abba(mo_num,mo_num,mo_num,mo_num))
+
+  call w_aaaa(v_aaaa)
+  call w_abab(v_abab)
+  call w_abba(v_abba)
+  
+  call run_mp2_sp_v2(psi_det(1,1,1), v_aaaa, v_abab, v_abba, E2)
+  print*,'E(SCF)=',hf_energy
+  print*,'E(MP2)=',hf_energy+E2, E2
+     
+  deallocate(v_aaaa,v_abab,v_abba)
+  
+end
+#+end_src
+
+* Utils
+** build H
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine build_H(H)
+
+  implicit none
+
+  double precision, intent(out) :: H(N_det,N_det)
+
+  integer                       :: i,j
+  double precision              :: h_ij
+
+  do j = 1, N_det
+    do i = 1, N_det
+      call i_H_j(psi_det(:,:,i), psi_det(:,:,j), N_int, h_ij)
+      H(i,j) = h_ij
+    enddo
+  enddo
+
+end
+#+end_src
+
+** diag H
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine diag_H(H,n_val)
+
+  implicit none
+
+  integer, intent(in)           :: n_val
+  double precision, intent(in)  :: H(N_det,N_det)
+  double precision, allocatable :: eigvalues(:), eigvectors(:,:)
+  integer                       :: i
+
+  allocate(eigvalues(N_det),eigvectors(N_det,N_det))
+
+  call lapack_diag(eigvalues,eigvectors,H,N_det,N_det)
+
+  print*,''
+  print*,'============'
+  print*,'Eigenvalues:'
+  do i = 1, n_val
+     print*,eigvalues(i) + nuclear_repulsion
+  enddo
+  print*,'============'
+
+  deallocate(eigvalues,eigvectors)
+
+end
+#+end_src
+
+** MP2
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine run_mp2()
+
+  implicit none
+
+  double precision              :: E, mo_two_e_integral
+  integer                       :: i,j,a,b,tmp_i,tmp_j,tmp_a,tmp_b
+  integer                       :: nI, nV
+
+  nI = n_inact_orb
+  nV = n_virt_orb
+
+  print*,'n_inact_orb =', n_inact_orb
+  print*,'n_virt_orb  =', n_virt_orb
+  
+  E = 0d0
+
+  do tmp_b = 1, nV
+    b = list_virt(tmp_b)
+    do tmp_a = 1, nV
+      a = list_virt(tmp_a)
+      do tmp_j = 1, nI
+        j = list_inact(tmp_j)
+        do tmp_i = 1, nI
+           i = list_inact(tmp_i)
+           E = E - ( mo_two_e_integral(i,j,a,b) &
+               ,* (2d0 * mo_two_e_integral(i,j,a,b) - mo_two_e_integral(i,j,b,a))) &
+              / (fock_matrix_mo(a,a) + fock_matrix_mo(b,b)     &
+               - fock_matrix_mo(i,i) - fock_matrix_mo(j,j))
+        enddo
+      enddo
+    enddo
+  enddo
+  
+  print*,'E(SCF)=', hf_energy
+  print*,'E(MP2)=', E
+  print*,'Total =', E+hf_energy
+  
+end
+#+end_src
+
+** V0
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine run_mp2_sp_v0(det,E2)
+
+  use bitmasks
+  implicit none
+
+  integer(bit_kind), intent(in)  :: det(N_int,2)
+  double precision, intent(out)  :: E2
+  
+  integer                        :: i,j,a,b
+  integer                        :: tmp_i,tmp_j,tmp_a,tmp_b
+  integer                        :: si,sj,sa,sb
+  integer                        :: s1,h1,tmp_h1,s2,h2,p1,p2
+  integer                        :: degree
+  integer                        :: nOa,nVa,nOb,nVb,nO,nV
+  integer                        :: ni,nj,na,nb
+  integer                        :: exc(0:2, 2, 2)
+  integer                        :: idx_oa,idx_ob,idx_va,idx_vb
+  double precision               :: mo_two_e_integral, div, H_ii, E_act, tmp, v, delta_E
+  double precision               :: phase 
+  integer(bit_kind), allocatable :: res(:,:)
+  logical                        :: is_p
+  integer, allocatable           :: occ_a(:), vir_a(:)
+  integer, allocatable           :: occ_b(:), vir_b(:)
+  integer, allocatable           :: act_occ_a(:), act_vir_a(:)
+  integer, allocatable           :: act_occ_b(:), act_vir_b(:)
+  double precision, allocatable  :: fock_diag_tmp(:,:)
+
+  ! Frozen core
+  nO = elec_alpha_num - n_core_orb
+  nV = mo_num - elec_alpha_num
+  nOA = elec_alpha_num - n_core_orb - n_inact_orb
+  nVA = n_act_orb - nOA
+  
+  allocate(res(N_int,2))
+  allocate(occ_a(nO), vir_a(nV))
+  allocate(occ_b(nO), vir_b(nV))
+  allocate(act_occ_a(max(1,nOA)), act_vir_a(max(1,nVA)))
+  allocate(act_occ_b(max(1,nOA)), act_vir_b(max(1,nVA)))
+  allocate(fock_diag_tmp(2,mo_num+1))
+
+  call build_fock_tmp(fock_diag_tmp,det,N_int)
+  !print*,fock_diag_tmp(1,1:mo_num)
+  !print*,fock_diag_tmp(2,1:mo_num)
+
+  ! List of occupied/virtual spin orbitals
+  idx_oa = 1
+  idx_ob = 1
+  idx_va = 1
+  idx_vb = 1
+  do s1 = 1, 2
+    do h1 = n_core_orb+1, mo_num
+      call apply_hole(det,s1,h1,res,is_p,N_int)
+      if (is_p) then
+        if (s1 == 1) then
+          occ_a(idx_oa) = h1
+          idx_oa = idx_oa+1
+        else
+          occ_b(idx_ob) = h1
+          idx_ob = idx_ob+1
+        endif
+      else
+        if (s1 == 1) then
+          vir_a(idx_va) = h1
+          idx_va = idx_va+1
+        else
+          vir_b(idx_vb) = h1
+          idx_vb = idx_vb+1
+        endif
+      endif   
+    enddo
+  enddo
+
+  ! List of occupied/virtual active spin orbitals
+  idx_oa = 1
+  idx_ob = 1
+  idx_va = 1
+  idx_vb = 1
+  do s1 = 1,2
+    do tmp_h1 = 1, n_act_orb
+      h1 = list_act(tmp_h1)
+      call apply_hole(det,s1,h1,res,is_p,N_int)
+      if (is_p) then
+        if (s1 == 1) then
+          act_occ_a(idx_oa) = h1
+          idx_oa = idx_oa+1
+        else
+          act_occ_b(idx_ob) = h1
+          idx_ob = idx_ob+1
+        endif
+      else
+        if (s1 == 1) then
+          act_vir_a(idx_va) = h1
+          idx_va = idx_va+1
+        else
+          act_vir_b(idx_vb) = h1
+          idx_vb = idx_vb+1
+        endif
+      endif
+    enddo
+  enddo
+
+  !call print_det(det,N_int)
+  !print*,'Act MOs'
+  !print*,list_act
+  !print*,act_occ_a
+  !print*,act_occ_b
+  !print*,act_vir_a
+  !print*,act_vir_b
+
+  ! E2
+  E2 = 0d0
+  do tmp_i = 1, 2*nO
+    if (tmp_i <= nO) then
+      si = 1
+      i  = occ_a(tmp_i)
+    else
+      si = 2
+      i  = occ_b(tmp_i - nO)
+    endif
+    do tmp_j = 1, 2*nO
+      if (tmp_j <= nO) then
+        sj = 1
+        j  = occ_a(tmp_j)
+      else
+        sj = 2
+        j  = occ_b(tmp_j - nO)
+      endif
+      do tmp_a = 1, 2*nV
+        if (tmp_a <= nV) then
+          sa = 1
+          a  = vir_a(tmp_a)
+        else
+          sa = 2
+          a  = vir_b(tmp_a - nV)
+        endif
+        do tmp_b = 1, 2*nV
+          if (tmp_b <= nV) then
+            sb = 1
+            b  = vir_a(tmp_b)
+          else
+            sb = 2
+            b  = vir_b(tmp_b - nV)
+          endif
+          
+          !print*,i,j,a,b
+          !print*,fock_diag_tmp(sa,a) + fock_diag_tmp(sb,b) - fock_diag_tmp(si,i) - fock_diag_tmp(sj,j)
+          !div = 1d0 / (fock_diag_tmp(sa,a) + fock_diag_tmp(sb,b) &
+          !              - fock_diag_tmp(si,i) - fock_diag_tmp(sj,j))
+          !! < s1 s1 || s1 s1 >
+          !if (si == sa .and. sj == sb .and. si == sj) then
+          !   E2 = E2 - (mo_two_e_integral(i,j,a,b) - mo_two_e_integral(i,j,b,a))**2 * div
+          !! < s1 s2 || s1 s2 >
+          !else if (si == sa .and. sj == sb) then
+          !   E2 = E2 - mo_two_e_integral(i,j,a,b)**2 * div
+          !! < s1 s2 || s2 s1 >
+          !else if (si == sb .and. sj == sa) then
+          !   E2 = E2 - mo_two_e_integral(i,j,b,a)**2 * div
+          !endif
+
+          ! < s1 s1 || s1 s1 >
+          if (si == sa .and. sj == sb .and. si == sj) then
+             v = (mo_two_e_integral(i,j,a,b) - mo_two_e_integral(i,j,b,a))
+          ! < s1 s2 || s1 s2 >
+          else if (si == sa .and. sj == sb) then
+             v = mo_two_e_integral(i,j,a,b)
+          ! < s1 s2 || s2 s1 >
+          else if (si == sb .and. sj == sa) then
+             v = mo_two_e_integral(i,j,b,a)
+          else
+             cycle
+          endif
+
+          ! Diag 2 by 2 to avoid the division by 0
+          delta_E = fock_diag_tmp(sa,a) + fock_diag_tmp(sb,b) &
+                  - fock_diag_tmp(si,i) - fock_diag_tmp(sj,j)
+          v = 2d0 * v
+          tmp = dsqrt(delta_E * delta_E + v * v)
+          if (delta_E < 0.d0) then
+              tmp = -tmp
+          endif
+          E2 = E2 - 0.5d0 * (tmp - delta_E)
+          
+        enddo
+      enddo
+    enddo
+  enddo
+
+  !print*,'E2 1:', E2 * 0.25d0
+
+  E_act = E2
+
+  ! E2 - E2 active-active
+  do tmp_i = 1, 2*nOA
+    if (tmp_i <= nOA) then
+      si = 1
+      i  = act_occ_a(tmp_i)
+    else
+      si = 2
+      i  = act_occ_b(tmp_i - nOA)
+    endif
+    do tmp_j = 1, 2*nOA
+      if (tmp_j <= nOA) then
+        sj = 1
+        j  = act_occ_a(tmp_j)
+      else
+        sj = 2
+        j  = act_occ_b(tmp_j - nOA)
+      endif
+      do tmp_a = 1, 2*nVA
+        if (tmp_a <= nVA) then
+          sa = 1
+          a  = act_vir_a(tmp_a)
+        else
+          sa = 2
+          a  = act_vir_b(tmp_a - nVA)
+        endif
+        do tmp_b = 1, 2*nVA
+          if (tmp_b <= nVA) then
+            sb = 1
+            b  = act_vir_a(tmp_b)
+          else
+            sb = 2
+            b  = act_vir_b(tmp_b - nVA)
+          endif
+
+          div = 1d0 / (fock_diag_tmp(sa,a) + fock_diag_tmp(sb,b) &
+                        - fock_diag_tmp(si,i) - fock_diag_tmp(sj,j))
+          !print*,i,j,a,b
+          !print*,fock_diag_tmp(sa,a), fock_diag_tmp(sb,b), - fock_diag_tmp(si,i), - fock_diag_tmp(sj,j)
+          !print*,fock_diag_tmp(sa,a) + fock_diag_tmp(sb,b) - fock_diag_tmp(si,i) - fock_diag_tmp(sj,j)
+          ! < s1 s1 || s1 s1 >
+          !if (si == sa .and. sj == sb .and. si == sj) then
+          !   E2 = E2 + (mo_two_e_integral(i,j,a,b) - mo_two_e_integral(i,j,b,a))**2 * div
+          !! < s1 s2 || s1 s2 >
+          !else if (si == sa .and. sj == sb) then
+          !   E2 = E2 + mo_two_e_integral(i,j,a,b)**2 * div
+          !! < s1 s2 || s2 s1 >
+          !else if (si == sb .and. sj == sa) then
+          !   E2 = E2 + mo_two_e_integral(i,j,b,a)**2 * div
+          !endif
+
+          ! < s1 s1 || s1 s1 >
+          if (si == sa .and. sj == sb .and. si == sj) then
+             v = (mo_two_e_integral(i,j,a,b) - mo_two_e_integral(i,j,b,a))
+          ! < s1 s2 || s1 s2 >
+          else if (si == sa .and. sj == sb) then
+             v = mo_two_e_integral(i,j,a,b)
+          ! < s1 s2 || s2 s1 >
+          else if (si == sb .and. sj == sa) then
+             v = mo_two_e_integral(i,j,b,a)
+          else
+             cycle
+          endif
+          
+          delta_E = fock_diag_tmp(sa,a) + fock_diag_tmp(sb,b) &
+                  - fock_diag_tmp(si,i) - fock_diag_tmp(sj,j)
+          v = 2d0 * v
+          tmp = dsqrt(delta_E * delta_E + v * v)
+          if (delta_E < 0.d0) then
+              tmp = -tmp
+          endif
+          !E2 = E2 + 0.5d0 * (tmp - delta_E)
+           
+        enddo
+      enddo
+    enddo
+  enddo
+
+  E_act = (E_act - E2) * 0.25d0
+  
+  ! Final energy
+  E2 = E2 * 0.25d0
+
+  do i = 1, N_det
+     call get_excitation_degree(det,psi_det(:,:,i),degree,N_int)
+     if (degree /= 2) then
+        cycle
+     endif
+     call get_excitation(det,psi_det(:,:,i),exc,degree,phase,N_int)
+     call decode_exc(exc,degree,h1,p1,h2,p2,s1,s2)
+     call i_H_j(det,psi_det(:,:,i),N_int,v)
+     delta_E = fock_diag_tmp(s1,p1) + fock_diag_tmp(s2,p2) &
+             - fock_diag_tmp(s1,h1) - fock_diag_tmp(s2,h2)
+     v = 2d0 * v
+     tmp = dsqrt(delta_E * delta_E + v * v)
+     if (delta_E < 0.d0) then
+         tmp = -tmp
+     endif
+     E2 = E2 + 0.5d0 * (tmp - delta_E)
+  enddo
+
+  ! E of the det
+  call i_H_j(det,det,N_int,H_ii)
+  H_ii = H_ii + nuclear_repulsion
+  
+  !print*,'SP'
+  !print*,'E(det)=    ', H_ii
+  !print*,'E(MP2)=    ', E2
+  !print*,'E(MP2 act)=', E_act
+  !print*,'Total =', H_ii+E2
+
+  deallocate(occ_b,vir_b)
+  deallocate(occ_a,vir_a)
+  deallocate(act_occ_a,act_vir_a)
+  deallocate(act_occ_b,act_vir_b)
+  deallocate(res,fock_diag_tmp)
+  
+end  
+#+end_src
+
+** V1
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine run_mp2_sp_v1(det,v_aaaa,v_abab,v_abba,E2)
+
+  use bitmasks
+  implicit none
+
+  integer(bit_kind), intent(in)  :: det(N_int,2)
+  double precision, intent(in)   :: v_aaaa(mo_num,mo_num,mo_num,mo_num)
+  double precision, intent(in)   :: v_abab(mo_num,mo_num,mo_num,mo_num)
+  double precision, intent(in)   :: v_abba(mo_num,mo_num,mo_num,mo_num)
+  double precision, intent(out)  :: E2
+  
+  integer                        :: i,j,a,b
+  integer                        :: tmp_i,tmp_j,tmp_a,tmp_b
+  integer                        :: si,sj,sa,sb
+  integer                        :: s1,h1,tmp_h1,s2,h2,p1,p2
+  integer                        :: degree
+  integer                        :: nOa,nVa,nOb,nVb,nO,nV
+  integer                        :: ni,nj,na,nb
+  integer                        :: exc(0:2, 2, 2)
+  integer                        :: idx_o,idx_v
+  integer                        :: nO_s(2), nV_s(2)
+  integer                        :: nOA_s(2), nVA_s(2)
+  double precision               :: mo_two_e_integral, div, H_ii, E_act, tmp, v, delta_E
+  double precision               :: phase, t0,t1,t2 
+  integer(bit_kind), allocatable :: res(:,:)
+  logical                        :: is_p
+  integer, allocatable           :: occ(:,:), vir(:,:)
+  integer, allocatable           :: act_occ(:,:), act_vir(:,:)
+  double precision, allocatable  :: fock_diag_tmp(:,:)
+
+  na = elec_alpha_num
+  nb = elec_beta_num
+  
+  ! Frozen core
+  ! N occ, N vir
+  nO = max(na,nb) - n_core_orb
+  nV = mo_num - min(na,nb)
+  ! N occ act, N vir act
+  nOA = max(na,nb) - n_core_orb - n_inact_orb
+  nVA = n_act_orb - nOA
+
+  nO_s(1) = na - n_core_orb
+  nO_s(2) = nb - n_core_orb
+  nV_s(1) = mo_num - na
+  nV_s(2) = mo_num - nb
+  
+  nOA_s(1) = na - n_core_orb - n_inact_orb
+  nOA_s(2) = nb - n_core_orb - n_inact_orb
+  nVA_s(1) = n_act_orb - nOA_s(1)
+  nVA_s(2) = n_act_orb - nOA_s(2)
+  
+  allocate(res(N_int,2))
+  allocate(occ(nO,2), vir(nV,2))
+  allocate(act_occ(max(1,nOA),2), act_vir(max(1,nVA),2))
+  allocate(fock_diag_tmp(2,mo_num+1))
+
+  call build_fock_tmp(fock_diag_tmp,det,N_int)
+  !print*,fock_diag_tmp(1,1:mo_num)
+  !print*,fock_diag_tmp(2,1:mo_num)
+
+  ! List of occupied/virtual spin orbitals
+  do s1 = 1, 2
+    idx_o = 1
+    idx_v = 1
+    do h1 = n_core_orb+1, mo_num
+      call apply_hole(det,s1,h1,res,is_p,N_int)
+      if (is_p) then
+        occ(idx_o,s1) = h1
+        idx_o = idx_o+1
+      else
+        vir(idx_v,s1) = h1
+        idx_v = idx_v+1
+      endif   
+    enddo
+  enddo
+
+  ! List of occupied/virtual active spin orbitals
+  do s1 = 1,2
+    idx_o = 1
+    idx_v = 1
+    do tmp_h1 = 1, n_act_orb
+      h1 = list_act(tmp_h1)
+      call apply_hole(det,s1,h1,res,is_p,N_int)
+      if (is_p) then
+        act_occ(idx_o,s1) = h1
+        idx_o = idx_o+1
+      else
+        act_vir(idx_v,s1) = h1
+        idx_v = idx_v+1
+      endif
+    enddo
+  enddo
+
+  !call print_det(det,N_int)
+  !print*,'Act MOs'
+  !print*,list_act
+  !print*,act_occ_a
+  !print*,act_occ_b
+  !print*,act_vir_a
+  !print*,act_vir_b
+
+  call wall_time(t0)
+
+  ! E2
+  E2 = 0d0
+
+  ! Double
+  do si = 1, 2
+    do sj = 1, 2
+      do sa = 1, 2
+        do sb = 1, 2
+          if (si == sa .and. sj == sb .and. si == sj) then
+             call E2_spin(si,sj,sa,sb,occ,nO,vir,nV,nO_s,nV_s,v_aaaa,fock_diag_tmp,E2)
+          else if (si == sa .and. sj == sb) then
+             call E2_spin(si,sj,sa,sb,occ,nO,vir,nV,nO_s,nV_s,v_abab,fock_diag_tmp,E2)
+          else if (si == sb .and. sj == sa) then
+             call E2_spin(si,sj,sa,sb,occ,nO,vir,nV,nO_s,nV_s,v_abba,fock_diag_tmp,E2)
+          else
+             cycle
+          endif
+          !do tmp_i = 1, nO_s(si)
+          !  i = occ(tmp_i,si)
+          !  do tmp_j = 1, nO_s(sj)
+          !    j = occ(tmp_j,sj)
+          !    do tmp_a = 1, nV_s(sa)
+          !      a = vir(tmp_a,sa)
+          !      do tmp_b = 1, nV_s(sb)
+          !        b = vir(tmp_b,sb)
+          !        
+          !        ! < s1 s1 || s1 s1 >
+          !        if (si == sa .and. sj == sb .and. si == sj) then
+          !           v = (mo_two_e_integral(i,j,a,b) - mo_two_e_integral(i,j,b,a))
+          !        ! < s1 s2 || s1 s2 >
+          !        else if (si == sa .and. sj == sb) then
+          !           v = mo_two_e_integral(i,j,a,b)
+          !        ! < s1 s2 || s2 s1 >
+          !        else if (si == sb .and. sj == sa) then
+          !           v = mo_two_e_integral(i,j,b,a)
+          !        else
+          !           cycle
+          !        endif
+
+          !        ! Diag 2 by 2 to avoid the division by 0
+          !        delta_E = fock_diag_tmp(sa,a) + fock_diag_tmp(sb,b) &
+          !                - fock_diag_tmp(si,i) - fock_diag_tmp(sj,j)
+          !        v = 2d0 * v
+          !        tmp = dsqrt(delta_E * delta_E + v * v)
+          !        if (delta_E < 0.d0) then
+          !            tmp = -tmp
+          !        endif
+          !        E2 = E2 - 0.5d0 * (tmp - delta_E)
+          !      enddo
+          !    enddo
+          !  enddo
+          !enddo
+        enddo
+      enddo
+    enddo
+  enddo
+  
+  E2 = E2 * 0.25d0
+  !print*,'E2 1:', E2 * 0.25d0
+
+  !E_act = E2
+
+  ! E2 - E2 active-active
+  !do si = 1, 2
+  !  do sj = 1, 2
+  !    do sa = 1, 2
+  !      do sb = 1, 2
+  !        do tmp_i = 1, nOA_s(si)
+  !          i = act_occ(tmp_i,si)
+  !          do tmp_j = 1, nOa_s(sj)
+  !            j = act_occ(tmp_j,sj)
+  !            do tmp_a = 1, nVa_s(sa)
+  !              a = act_vir(tmp_a,sa)
+  !              do tmp_b = 1, nVa_s(sb)
+  !                b = act_vir(tmp_b,sb)
+
+  !                ! < s1 s1 || s1 s1 >
+  !                if (si == sa .and. sj == sb .and. si == sj) then
+  !                   v = (mo_two_e_integral(i,j,a,b) - mo_two_e_integral(i,j,b,a))
+  !                ! < s1 s2 || s1 s2 >
+  !                else if (si == sa .and. sj == sb) then
+  !                   v = mo_two_e_integral(i,j,a,b)
+  !                ! < s1 s2 || s2 s1 >
+  !                else if (si == sb .and. sj == sa) then
+  !                   v = mo_two_e_integral(i,j,b,a)
+  !                else
+  !                   cycle
+  !                endif
+  !                
+  !                delta_E = fock_diag_tmp(sa,a) + fock_diag_tmp(sb,b) &
+  !                        - fock_diag_tmp(si,i) - fock_diag_tmp(sj,j)
+  !                v = 2d0 * v
+  !                tmp = dsqrt(delta_E * delta_E + v * v)
+  !                if (delta_E < 0.d0) then
+  !                    tmp = -tmp
+  !                endif
+  !                !E2 = E2 + 0.5d0 * (tmp - delta_E)
+  !                
+  !              enddo
+  !            enddo
+  !          enddo
+  !        enddo
+  !      enddo
+  !    enddo
+  !  enddo
+  !enddo
+
+  !E_act = (E_act - E2) * 0.25d0
+  
+  call wall_time(t1)
+  do i = 1, N_det
+     call get_excitation_degree(det,psi_det(:,:,i),degree,N_int)
+     if (degree /= 2) then
+        cycle
+     endif
+     call get_excitation(det,psi_det(:,:,i),exc,degree,phase,N_int)
+     call decode_exc(exc,degree,h1,p1,h2,p2,s1,s2)
+     call i_H_j(det,psi_det(:,:,i),N_int,v)
+     delta_E = fock_diag_tmp(s1,p1) + fock_diag_tmp(s2,p2) &
+             - fock_diag_tmp(s1,h1) - fock_diag_tmp(s2,h2)
+     v = 2d0 * v
+     tmp = dsqrt(delta_E * delta_E + v * v)
+     if (delta_E < 0.d0) then
+         tmp = -tmp
+     endif
+     E2 = E2 + 0.5d0 * (tmp - delta_E)
+  enddo
+  call wall_time(t2)
+  !print*,'t1:', t1-t0
+  !print*,'t2:', t2-t1
+
+  ! E of the det
+  call i_H_j(det,det,N_int,H_ii)
+  H_ii = H_ii + nuclear_repulsion
+  
+  !print*,'SP'
+  !print*,'E(det)=    ', H_ii
+  !print*,'E(MP2)=    ', E2
+  !print*,'E(MP2 act)=', E_act
+  !print*,'Total =', H_ii+E2
+
+  deallocate(occ,vir)
+  deallocate(act_occ,act_vir)
+  deallocate(res,fock_diag_tmp)
+  
+end  
+#+end_src
+
+** V2
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine run_mp2_sp_v2(det,v_aaaa,v_abab,v_abba,E2)
+
+  use bitmasks
+  implicit none
+
+  integer(bit_kind), intent(in)  :: det(N_int,2)
+  double precision, intent(in)   :: v_aaaa(mo_num,mo_num,mo_num,mo_num)
+  double precision, intent(in)   :: v_abab(mo_num,mo_num,mo_num,mo_num)
+  double precision, intent(in)   :: v_abba(mo_num,mo_num,mo_num,mo_num)
+  double precision, intent(out)  :: E2
+  
+  integer                        :: i,j,a,b
+  integer                        :: tmp_i,tmp_j,tmp_a,tmp_b
+  integer                        :: si,sj,sa,sb
+  integer                        :: s1,h1,tmp_h1,s2,h2,p1,p2
+  integer                        :: degree
+  integer                        :: nOa,nVa,nOb,nVb,nO,nV
+  integer                        :: ni,nj,na,nb
+  integer                        :: exc(0:2, 2, 2)
+  integer                        :: idx_o,idx_v
+  integer                        :: nO_s(2), nV_s(2)
+  double precision               :: mo_two_e_integral, div, H_ii, E_act, tmp, v, delta_E
+  double precision               :: phase, t0,t1,t2
+  double precision               :: E2_mono, E2_double 
+  integer(bit_kind), allocatable :: res(:,:)
+  logical                        :: is_p
+  integer, allocatable           :: occ(:,:), vir(:,:)
+  double precision, allocatable  :: fock_diag_tmp(:,:), fock_spin(:,:,:)
+
+  na = elec_alpha_num
+  nb = elec_beta_num
+  
+  ! Frozen core
+  ! N occ, N vir
+  nO = max(na,nb) - n_core_orb
+  nV = mo_num - min(na,nb)
+
+  nO_s(1) = na - n_core_orb
+  nO_s(2) = nb - n_core_orb
+  nV_s(1) = mo_num - na
+  nV_s(2) = mo_num - nb
+  
+  allocate(res(N_int,2))
+  allocate(occ(nO,2), vir(nV,2))
+  allocate(fock_diag_tmp(2,mo_num+1),fock_spin(2,mo_num,mo_num))
+
+  call get_fock_matrix_alpha(det,fock_spin(1,:,:))
+  call get_fock_matrix_beta (det,fock_spin(2,:,:))
+  call build_fock_tmp(fock_diag_tmp,det,N_int)
+  
+  ! List of occupied/virtual spin orbitals
+  do s1 = 1, 2
+    idx_o = 1
+    idx_v = 1
+    do h1 = n_core_orb+1, mo_num
+      call apply_hole(det,s1,h1,res,is_p,N_int)
+      if (is_p) then
+        occ(idx_o,s1) = h1
+        idx_o = idx_o+1
+      else
+        vir(idx_v,s1) = h1
+        idx_v = idx_v+1
+      endif   
+    enddo
+  enddo
+
+  ! E2
+  E2_mono = 0d0
+  ! Mono alpha
+  call E2_mono_spin(1,1,occ,nO,vir,nV,nO_S,nV_S,fock_spin(1,:,:),E2_mono)
+  print*,'aa  ',E2_mono
+  E2 = E2_mono
+  ! Mono beta
+  call E2_mono_spin(2,2,occ,nO,vir,nV,nO_S,nV_S,fock_spin(2,:,:),E2_mono)
+  print*,'bb  ',E2_mono-E2
+
+  E2_double = 0d0
+  ! Double
+  do si = 1, 2
+    do sj = 1, 2
+      do sa = 1, 2
+        do sb = 1, 2
+          E2 = E2_double
+          if (si == sa .and. sj == sb .and. si == sj) then
+             call E2_spin(si,sj,sa,sb,occ,nO,vir,nV,nO_s,nV_s,v_aaaa,fock_diag_tmp,E2_double)
+          else if (si == sa .and. sj == sb) then
+             call E2_spin(si,sj,sa,sb,occ,nO,vir,nV,nO_s,nV_s,v_abab,fock_diag_tmp,E2_double)
+          else if (si == sb .and. sj == sa) then
+             call E2_spin(si,sj,sa,sb,occ,nO,vir,nV,nO_s,nV_s,v_abba,fock_diag_tmp,E2_double)
+          else
+             cycle
+          endif
+          print*,si,sj,sa,sb,(E2_double-E2)*0.25d0
+        enddo
+      enddo
+    enddo
+  enddo
+
+  E2_double = E2_double * 0.25d0
+  print*,E2_double
+
+  E2 = E2_double + E2_mono
+  
+  do i = 1, N_det
+     call get_excitation_degree(det,psi_det(1,1,i),degree,N_int)
+     if (degree > 2) cycle
+     call get_excitation(det,psi_det(1,1,i),exc,degree,phase,N_int)
+     call decode_exc(exc,degree,h1,p1,h2,p2,s1,s2)
+     if (degree == 2) then
+       call i_H_j(det,psi_det(:,:,i),N_int,v)
+       delta_E = fock_diag_tmp(s1,p1) + fock_diag_tmp(s2,p2) &
+               - fock_diag_tmp(s1,h1) - fock_diag_tmp(s2,h2)
+     elseif (degree == 1) then
+       v = fock_spin(s1,h1,p1)
+       delta_E = fock_diag_tmp(s1,p1) - fock_diag_tmp(s1,h1)
+     else
+       cycle
+     endif
+        
+     v = 2d0 * v
+     tmp = dsqrt(delta_E * delta_E + v * v)
+     if (delta_E < 0.d0) then
+         tmp = -tmp
+     endif
+     E2 = E2 + 0.5d0 * (tmp - delta_E)
+  enddo
+  
+  ! E of the det
+  call i_H_j(det,det,N_int,H_ii)
+  H_ii = H_ii + nuclear_repulsion
+  
+  !print*,'E(det)=    ', H_ii
+  !print*,'E(MP2)=    ', E2
+  !print*,'E(MP2 act)=', E_act
+  !print*,'Total =', H_ii+E2
+
+  deallocate(occ,vir)
+  deallocate(res,fock_diag_tmp,fock_spin)
+  
+end  
+#+end_src
+
+** Int
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine w_aaaa(v)
+
+  double precision, intent(out) :: v(mo_num,mo_num,mo_num,mo_num)
+
+  integer                       :: i,j,a,b
+  double precision, external    :: mo_two_e_integral
+
+  implicit none
+
+  do b = 1, mo_num
+    do a = 1, mo_num
+      do j = 1, mo_num
+        do i = 1, mo_num
+           v(i,j,a,b) = mo_two_e_integral(i,j,a,b) - mo_two_e_integral(j,i,a,b)
+        enddo
+      enddo
+    enddo
+  enddo
+  
+end
+#+end_src
+
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine w_abab(v)
+
+  double precision, intent(out) :: v(mo_num,mo_num,mo_num,mo_num)
+
+  integer                       :: i,j,a,b
+  double precision, external    :: mo_two_e_integral
+
+  implicit none
+
+  do b = 1, mo_num
+    do a = 1, mo_num
+      do j = 1, mo_num
+        do i = 1, mo_num
+           v(i,j,a,b) = mo_two_e_integral(i,j,a,b)
+        enddo
+      enddo
+    enddo
+  enddo
+  
+end
+#+end_src
+
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine w_abba(v)
+
+  double precision, intent(out) :: v(mo_num,mo_num,mo_num,mo_num)
+
+  integer                       :: i,j,a,b
+  double precision, external    :: mo_two_e_integral
+
+  implicit none
+
+  do b = 1, mo_num
+    do a = 1, mo_num
+      do j = 1, mo_num
+        do i = 1, mo_num
+           v(i,j,a,b) = - mo_two_e_integral(j,i,a,b)
+        enddo
+      enddo
+    enddo
+  enddo
+  
+end
+#+end_src
+
+** E double
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine E2_spin(si,sj,sa,sb,occ,nO,vir,nV,nO_s,nV_s,v,fock_diag_tmp,E2)
+
+  implicit none
+
+  integer, intent(in)             :: si,sj,sa,sb
+  integer, intent(in)             :: nO_s(2), nV_s(2)
+  integer, intent(in)             :: nO, nV
+  integer, intent(in)             :: occ(nO,2), vir(nV,2)
+  double precision, intent(in)    :: v(mo_num,mo_num,mo_num,mo_num), fock_diag_tmp(2,mo_num+1)
+  double precision, intent(inout) :: E2
+
+  integer                         :: i,j,a,b
+  integer                         :: ni,nj,na,nb
+  integer                         :: tmp_i,tmp_j,tmp_a,tmp_b
+  double precision                :: val, tmp, delta_E
+  double precision, allocatable   :: fi(:), fj(:), fa(:), fb(:), tmp_E2
+
+  allocate(fi(mo_num),fj(mo_num),fa(mo_num),fb(mo_num))
+
+  ni = nO_s(si)
+  nj = nO_s(sj)
+  na = nV_s(sa)
+  nb = nV_s(sb)
+
+  fi = fock_diag_tmp(si,1:mo_num)
+  fj = fock_diag_tmp(sj,1:mo_num)
+  fa = fock_diag_tmp(sa,1:mo_num)
+  fb = fock_diag_tmp(sb,1:mo_num)
+
+  do tmp_i = 1, ni
+    i = occ(tmp_i,si)
+    do tmp_j = 1, nj
+      j = occ(tmp_j,sj)
+      do tmp_a = 1, na
+        a = vir(tmp_a,sa)
+        do tmp_b = 1, nb
+          b = vir(tmp_b,sb)
+
+          E2 = E2 - v(b,a,j,i)**2/(fa(a) + fb(b) - fi(i) - fj(j))
+          
+          ! Diag 2 by 2 to avoid the division by 0
+          !delta_E = fa(a) + fb(b) - fi(i) - fj(j)
+          !
+          !val = 2d0 * v(b,a,j,i)
+          !tmp = dsqrt(delta_E * delta_E + val * val)
+          !if (delta_E < 0.d0) then
+          !    tmp = -tmp
+          !endif
+          !E2 = E2 - 0.5d0 * (tmp - delta_E)
+        enddo
+      enddo
+    enddo
+  enddo
+
+  deallocate(fi,fj,fa,fb)
+          
+end
+#+end_src
+
+** E mono
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine E2_mono_spin(si,sa,occ,nO,vir,nV,nO_S,nV_S,f,E2)
+
+  implicit none
+
+  integer, intent(in) :: si, sa
+  integer, intent(in) :: nO, nV, nO_S(2), nV_S(2)
+  integer, intent(in) :: occ(nO,2), vir(nV,2)
+  double precision, intent(in) :: f(mo_num,mo_num)
+  
+  double precision, intent(inout) :: E2
+
+  integer :: i,a,tmp_i,tmp_a,ni,na
+  double precision :: delta_E, val, tmp
+
+  ni = nO_s(si)
+  na = nV_s(sa)
+  !print*,occ(:,si)
+  !print*,vir(:,sa)
+  do tmp_i = 1, ni
+    i = occ(tmp_i,si)
+    do tmp_a = 1, na
+      a = vir(tmp_a,sa)
+      !print*,i,a
+
+      E2 = E2 - f(i,a)**2/(f(a,a) - f(i,i))
+      ! Diag 2 by 2 to avoid the division by 0
+      !delta_E = f(a,a) - f(i,i)
+      !
+      !val = 2d0 * f(i,a)
+      !tmp = dsqrt(delta_E * delta_E + val * val)
+      !if (delta_E < 0.d0) then
+      !    tmp = -tmp
+      !endif
+      !E2 = E2 - 0.5d0 * (tmp - delta_E)
+      
+    enddo
+  enddo
+
+end
+#+end_src
+
+** Test
+MP perturbation theory
+\begin{align*}
+E^{(0)} + E^{(1)} &= \sum_i^\text{elec} \varepsilon_i - \frac{1}{2} \sum_{ij}^\text{elec} <ij||ij> \\
+&= \sum_i^\text{elec} \left(h_{ii} + \sum_j^\text{elec} <ij||ij> \right) - \frac{1}{2} \sum_{ij}^\text{elec} <ij||ij> \\
+&= \sum_i^\text{elec} h_{ii} + \frac{1}{2} \sum_{ij}^\text{elec} <ij||ij> \\
+&= <0|\hat{H}|0>
+\end{align*}
+#+begin_src f90 :comments org :tangle mp2_sub.irp.f
+subroutine test_E_mono_det()
+  implicit none
+
+  ! Only for seniority 0 determinants
+
+  double precision :: E, E0, E1, mo_two_e_integral
+  integer :: i,j,tmp_i,tmp_j
+ 
+  ! With Fock 
+  E0 = 0d0
+  do i = 1, elec_alpha_num
+    E0 = E0 + 2d0 * fock_matrix_mo(i,i)
+  enddo
+  
+  E1 = 0d0
+  do i = 1, elec_alpha_num
+    do j = 1, elec_alpha_num
+      E1 = E1 - 0.5d0 * (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+              - 0.5d0 * (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+              - 0.5d0 * (mo_two_e_integral(i,j,i,j))                              &  
+              - 0.5d0 * (mo_two_e_integral(i,j,i,j))
+    enddo
+  enddo
+
+  print*, "E", E0 + E1 + nuclear_repulsion
+
+  ! As <H>
+  E = 0d0
+  do i = 1, elec_alpha_num
+    E = E + 2d0 * mo_one_e_integrals(i,i)
+  enddo
+
+  do i = 1, elec_alpha_num
+    do j = 1, elec_alpha_num
+      E = E + 0.5d0 * (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+            + 0.5d0 * (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+            + 0.5d0 * (mo_two_e_integral(i,j,i,j))                              &
+            + 0.5d0 * (mo_two_e_integral(i,j,i,j))
+    enddo
+  enddo
+
+  print*, "E", E + nuclear_repulsion
+
+  ! With Fock
+  double precision, allocatable :: fock_diag_tmp(:,:)
+  allocate(fock_diag_tmp(2,mo_num+1))
+
+  call build_fock_tmp(fock_diag_tmp,psi_det(N_int,:,1),N_int)
+  call print_det(psi_det(N_int,:,1),N_int)
+ 
+  do i = 1, mo_num
+    write(*,'(10F12.3)') fock_matrix_mo(i,:)
+  enddo
+ 
+  do i = 1, mo_num
+    write(*,'(10F12.3)') fock_diag_tmp(:,i)
+  enddo
+ 
+  E0 = 0d0
+  do i = 1, elec_alpha_num
+    !E0 = E0 + 2d0 * fock_diag_tmp(1,i)
+    !E0 = E0 + 2d0 * fock_diag_tmp(2,i)
+  enddo
+
+  fock_diag_tmp = 0d0
+  do tmp_i = 1, elec_alpha_num
+    i = list_inact(tmp_i)
+    fock_diag_tmp(1,tmp_i) = fock_diag_tmp(1,tmp_i) + mo_one_e_integrals(i,i)
+    fock_diag_tmp(2,tmp_i) = fock_diag_tmp(1,tmp_i)
+  enddo 
+
+  do tmp_i = 1, elec_alpha_num
+    i = list_inact(tmp_i)
+    do tmp_j = 1, elec_alpha_num
+      j = list_inact(tmp_j)
+        fock_diag_tmp(1,tmp_i) = fock_diag_tmp(1,tmp_i)             &       
+        + (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+        + (mo_two_e_integral(i,j,i,j)) 
+        fock_diag_tmp(2,tmp_i) = fock_diag_tmp(1,tmp_i)
+    enddo
+  enddo
+
+  do i = 1, mo_num
+    write(*,'(10F12.3)') fock_diag_tmp(:,i)
+    E0 = E0 + fock_diag_tmp(1,i) + fock_diag_tmp(2,i)
+  enddo
+ 
+  E1 = 0d0
+  do tmp_j = 1, elec_alpha_num
+    j = list_inact(tmp_j)
+    do tmp_i = 1, elec_alpha_num
+      i = list_inact(tmp_i)
+      E1 = E1 - 0.5d0 * (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+              - 0.5d0 * (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+              - 0.5d0 * (mo_two_e_integral(i,j,i,j))                              &
+              - 0.5d0 * (mo_two_e_integral(i,j,i,j))
+    enddo
+  enddo
+
+  print*, "E", E0 + E1 + nuclear_repulsion
+
+  deallocate(fock_diag_tmp)
+
+  ! As <H>
+  E = 0d0
+  do tmp_i = 1, elec_alpha_num
+    i = list_inact(tmp_i)
+    E = E + 2d0 * mo_one_e_integrals(i,i)
+  enddo
+
+  do tmp_i = 1, elec_alpha_num
+    i = list_inact(tmp_i)
+    do tmp_j = 1, elec_alpha_num
+      j = list_inact(tmp_j)
+      E = E + 0.5d0 * (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+            + 0.5d0 * (mo_two_e_integral(i,j,i,j) - mo_two_e_integral(i,j,j,i)) &
+            + 0.5d0 * (mo_two_e_integral(i,j,i,j))                              &
+            + 0.5d0 * (mo_two_e_integral(i,j,i,j))
+    enddo
+  enddo
+
+  print*, "E", E + nuclear_repulsion
+
+end
+#+end_src
